@@ -1,18 +1,22 @@
 with Ada.Finalization;
 with Ada.IO_Exceptions;
-with C.errno;
+private with C.errno;
 private with System;
 package iconv is
 	pragma Preelaborate;
 	pragma Linker_Options ("-liconv");
 	
-	type Error_Status is (Fine, Invalid, Illegal_Sequence);
-	for Error_Status use (
-		Fine => 0,
-		Invalid => C.errno.EINVAL,
-		Illegal_Sequence => C.errno.EILSEQ);
+	package Errors is
+		type Error_Status is (Fine, Invalid, Illegal_Sequence);
+	private
+		for Error_Status use (
+			Fine => 0,
+			Invalid => C.errno.EINVAL,
+			Illegal_Sequence => C.errno.EILSEQ);
+	end Errors;
+	type Error_Status is new Errors.Error_Status;
 	
-	type Converter (<>) is limited private;
+	type Converter is limited private;
 	
 	function Open (To_Code, From_Code : String) return Converter;
 	
@@ -35,7 +39,7 @@ package iconv is
 	
 	-- two-way
 	
-	type Encoding (<>) is limited private;
+	type Encoding is limited private;
 	
 	function Open (Encoded, Decoded : String) return Encoding;
 	
@@ -53,14 +57,7 @@ package iconv is
 	
 private
 	
-	-- dirty hack for compiler's bug???
-	-- the type T has discriminant in public view, and
-	-- has no discriminant in private view, then,
-	-- an allocation of T with built-in-place causes compilation error!
-	type Unit is range 0 .. 0;
-	for Unit'Size use 0;
-	
-	type Converter (Unit : iconv.Unit) is
+	type Converter is
 		limited new Ada.Finalization.Limited_Controlled with
 	record
 		Handle : System.Address;
@@ -68,9 +65,9 @@ private
 	
 	overriding procedure Finalize (Object : in out Converter);
 	
-	type Encoding (Unit : iconv.Unit) is limited record
-		Writing : Converter (Unit);
-		Reading : Converter (Unit);
+	type Encoding is limited record
+		Writing : Converter;
+		Reading : Converter;
 	end record;
 	
 	Max_Length_Of_Single_Character : constant := 6; -- UTF-8

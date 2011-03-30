@@ -9,7 +9,6 @@ procedure stream_r is
 		Ada.Text_IO.Text_Streams.Stream (Ada.Text_IO.Standard_Output.all);
 	Encoding : aliased iconv.Encoding :=
 		iconv.Open ("ISO-2022-JP-3", "UTF-8");
-	pragma Warnings (Off, Encoding); -- suppress warning by bug of gcc-4.5.1
 	iconv_Input : iconv.Streams.Stream :=
 		iconv.Streams.Create (Std_Input, Encoding'Access);
 	S : Ada.Streams.Stream_Element_Array (1 .. 1);

@@ -176,7 +176,7 @@ package body iconv is
 		Z_To_Code : C.char_array (0 .. To_Code'Length);
 		Z_From_Code : C.char_array (0 .. From_Code'Length);
 		Dummy : C.void_ptr;
-		pragma Warnings (Off, Dummy);
+		pragma Unreferenced (Dummy);
 	begin
 		Dummy := C.string.memmove (
 			C.void_ptr (Z_To_Code (0)'Address),
@@ -189,7 +189,6 @@ package body iconv is
 			Z_From_Code'Last);
 		Z_From_Code (Z_From_Code'Last) := C.char'Val (0);
 		return Result : Converter := (Ada.Finalization.Limited_Controlled with
-			Unit => 0,
 			Handle => <>)
 		do
 			Open (
@@ -216,12 +215,9 @@ package body iconv is
 			Z_Decoded'Last);
 		Z_Decoded (Z_Decoded'Last) := C.char'Val (0);
 		return Result : Encoding := (
-			Unit => 0,
 			Writing => (Ada.Finalization.Limited_Controlled with
-				Unit => 0,
 				Handle => <>),
 			Reading => (Ada.Finalization.Limited_Controlled with
-				Unit => 0,
 				Handle => <>))
 		do
 			Open (
