@@ -6,6 +6,8 @@ package iconv is
 	pragma Preelaborate;
 	pragma Linker_Options ("-liconv");
 	
+	function Version return String;
+	
 	package Errors is
 		type Error_Status is (Fine, Invalid, Illegal_Sequence);
 	private

@@ -5,6 +5,20 @@ package body iconv is
 	use type System.Address;
 	use type C.signed_int;
 	use type C.size_t;
+	use type C.unsigned_int;
+	
+	function Version return String is
+		V : constant C.signed_int := C.iconv.qlibiconv_version;
+		Major : constant C.unsigned_int := C.Shift_Right (C.unsigned_int (V), 8);
+		Minor : constant C.unsigned_int := C.unsigned_int (V) and (2 ** 8 - 1);
+		Major_Image : constant String := C.unsigned_int'Image (Major);
+		Minor_Image : constant String := C.unsigned_int'Image (Minor);
+	begin
+		pragma Assert (Major_Image (Major_Image'First) = ' ');
+		pragma Assert (Minor_Image (Minor_Image'First) = ' ');
+		return Major_Image (Major_Image'First + 1 .. Major_Image'Last)
+			& '.' & Minor_Image (Minor_Image'First + 1 .. Minor_Image'Last);
+	end Version;
 	
 	procedure Open (
 		Object : in out Converter;
@@ -101,7 +115,8 @@ package body iconv is
 						when C.errno.EILSEQ =>
 							Status := Illegal_Sequence;
 						when others =>
-							raise Program_Error with "iconv.Convert_Single (" & errno'Img & ")";
+							raise Program_Error
+								with "iconv failed (errno =" & C.signed_int'Image (errno) & ")";
 					end case;
 				else
 					Status := Fine;
