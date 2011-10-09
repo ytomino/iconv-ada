@@ -33,9 +33,13 @@ package iconv is
 		In_Item : in String;
 		Out_Item : out String;
 		Out_Last : out Natural;
-		Invalid_Character : in Character := '?');
+		Substitute : in Character := '?');
 	
-	function Convert (Object : Converter; S : String) return String;
+	function Convert (
+		Object : Converter;
+		S : String;
+		Substitute : Character := '?')
+		return String;
 	
 	-- two-way
 	
@@ -43,8 +47,16 @@ package iconv is
 	
 	function Open (Encoded, Decoded : String) return Encoding;
 	
-	function Encode (Object : Encoding; S : String) return String;
-	function Decode (Object : Encoding; S : String) return String;
+	function Encode (
+		Object : Encoding;
+		S : String;
+		Substitute : Character := '?')
+		return String;
+	function Decode (
+		Object : Encoding;
+		S : String;
+		Substitute : Character := '?')
+		return String;
 	
 	-- get info
 	
@@ -60,7 +72,7 @@ private
 	type Converter is
 		limited new Ada.Finalization.Limited_Controlled with
 	record
-		Handle : System.Address;
+		Handle : System.Address := System.Null_Address;
 	end record;
 	
 	overriding procedure Finalize (Object : in out Converter);

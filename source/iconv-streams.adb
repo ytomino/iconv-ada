@@ -36,7 +36,7 @@ package body iconv.Streams is
 	function Create (
 		Target : not null access Ada.Streams.Root_Stream_Type'Class;
 		Encoding : not null access constant iconv.Encoding;
-		Invalid_Character : Character := '?')
+		Substitute : Character := '?')
 		return Stream
 	is
 		pragma Suppress (Accessibility_Check);
@@ -48,7 +48,7 @@ package body iconv.Streams is
 			Out_Buffer => <>,
 			In_Size => 0,
 			Out_Size => 0,
-			Invalid_Character => Character'Pos (Invalid_Character));
+			Substitute => Character'Pos (Substitute));
 	end Create;
 	
 	overriding procedure Read (
@@ -103,7 +103,7 @@ package body iconv.Streams is
 						when Illegal_Sequence =>
 							In_Last := In_Last + 1;
 							Out_Last := Out_Last + 1;
-							Object.Out_Buffer (Out_Last) := Object.Invalid_Character;
+							Object.Out_Buffer (Out_Last) := Object.Substitute;
 					end case;
 					Object.Out_Size := Out_Last;
 					declare
@@ -169,7 +169,7 @@ package body iconv.Streams is
 							when Invalid =>
 								exit; -- wait tail-bytes
 							when Illegal_Sequence =>
-								Out_Buffer (Out_Index) := Object.Invalid_Character;
+								Out_Buffer (Out_Index) := Object.Substitute;
 								Out_Index := Out_Index + 1;
 								In_Index := In_Index + 1;
 						end case;
