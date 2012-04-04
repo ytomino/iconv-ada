@@ -1,4 +1,5 @@
 with Ada.Unchecked_Conversion;
+with System.Storage_Elements;
 with C.iconv;
 with C.string;
 package body iconv is
@@ -24,8 +25,8 @@ package body iconv is
 		Object : in out Converter;
 		To_Code, From_Code : not null access constant C.char)
 	is
-		Invalid : constant System.Address :=
-			System'To_Address (System.Memory_Size - 1);
+		Invalid : constant System.Address := System.Storage_Elements.To_Address (
+			System.Storage_Elements.Integer_Address'Mod (-1));
 		Handle : constant System.Address :=
 			System.Address (C.iconv.iconv_open (To_Code, From_Code));
 	begin
