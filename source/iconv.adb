@@ -2,24 +2,12 @@ with Ada.Unchecked_Conversion;
 with System.Storage_Elements;
 with C.iconv;
 with C.string;
+with iconv.Inside;
 package body iconv is
 	use type System.Address;
 	use type C.signed_int;
 	use type C.size_t;
 	use type C.unsigned_int;
-	
-	function Version return String is
-		V : constant C.signed_int := C.iconv.qlibiconv_version;
-		Major : constant C.unsigned_int := C.Shift_Right (C.unsigned_int (V), 8);
-		Minor : constant C.unsigned_int := C.unsigned_int (V) and (2 ** 8 - 1);
-		Major_Image : constant String := C.unsigned_int'Image (Major);
-		Minor_Image : constant String := C.unsigned_int'Image (Minor);
-	begin
-		pragma Assert (Major_Image (Major_Image'First) = ' ');
-		pragma Assert (Minor_Image (Minor_Image'First) = ' ');
-		return Major_Image (Major_Image'First + 1 .. Major_Image'Last)
-			& '.' & Minor_Image (Minor_Image'First + 1 .. Minor_Image'Last);
-	end Version;
 	
 	procedure Open (
 		Object : in out Converter;
@@ -36,37 +24,10 @@ package body iconv is
 		Object.Handle := Handle;
 	end Open;
 	
-	function Do_One (
-		namescount : C.unsigned_int;
-		names : access C.char_const_ptr;
-		data : C.void_ptr) return C.signed_int;
-	pragma Convention (C, Do_One);
-	function Do_One (
-		namescount : C.unsigned_int;
-		names : access C.char_const_ptr;
-		data : C.void_ptr) return C.signed_int
-	is
-		Process : access procedure (Name : in String);
-		pragma Import (Ada, Process);
-		for Process'Address use System.Address (data);
-		Names_Array : array (1 .. namescount) of C.char_const_ptr;
-		pragma Import (Ada, Names_Array);
-		for Names_Array'Address use names.all'Address;
-	begin
-		for I in 1 .. namescount loop
-			declare
-				Length : constant Natural := Natural (C.string.strlen (Names_Array (I)));
-				Name : String (1 .. Length);
-				pragma Import (Ada, Name);
-				for Name'Address use Names_Array (I).all'Address;
-			begin
-				Process (Name);
-			end;
-		end loop;
-		return 0;
-	end Do_One;
-	
 	-- implementation
+	
+	function Version return String
+		renames Inside.Version;
 	
 	procedure Convert (
 		Object : in Converter;
@@ -203,10 +164,8 @@ package body iconv is
 		end if;
 	end Finalize;
 	
-	procedure Iterate (Process : not null access procedure (Name : in String)) is
-	begin
-		C.iconv.iconvlist (Do_One'Access, C.void_ptr (Process'Address));
-	end Iterate;
+	procedure Iterate (Process : not null access procedure (Name : in String))
+		renames Inside.Iterate;
 	
 	function Open (To_Code, From_Code : String) return Converter is
 		Z_To_Code : C.char_array (0 .. To_Code'Length);

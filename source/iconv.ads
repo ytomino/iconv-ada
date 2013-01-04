@@ -4,7 +4,6 @@ private with C.errno;
 private with System;
 package iconv is
 	pragma Preelaborate;
-	pragma Linker_Options ("-liconv");
 	
 	function Version return String;
 	

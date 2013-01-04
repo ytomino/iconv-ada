@@ -15,6 +15,12 @@ BUILDDIR=build-$(TARGET)
 IMPORTDIR:=import-$(TARGET)
 endif
 
+ifneq ($(findstring linux,$(TARGET)),)
+ICONVTYPE=lfs
+else
+ICONVTYPE=libiconv
+endif
+
 ifneq ($(DRAKE_RTSROOT),)
 DRAKE_RTSDIR=$(DRAKE_RTSROOT)/$(TARGET)
 endif
@@ -30,7 +36,7 @@ CFLAGS=-gnata -gnatwa -gnatyy-3chbs
 all: $(BUILDDIR)/list $(BUILDDIR)/stream_r $(BUILDDIR)/stream_w $(BUILDDIR)/test_nop $(BUILDDIR)/version
 
 $(BUILDDIR)/%: %.adb $(BUILDDIR) $(IMPORTDIR) $(wildcard $(SOURCEDIR)/*)
-	cd $(BUILDDIR) && $(GNATMAKE) -g $(MFLAGS) -I../$(SOURCEDIR) -I../$(IMPORTDIR) $(CFLAGS) ../$< -largs $(LFLAGS)
+	cd $(BUILDDIR) && $(GNATMAKE) -g $(MFLAGS) -I../$(SOURCEDIR) -I../$(SOURCEDIR)/$(ICONVTYPE) -I../$(IMPORTDIR) $(CFLAGS) ../$< -largs $(LFLAGS)
 
 $(BUILDDIR):
 	mkdir $(BUILDDIR)
