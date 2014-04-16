@@ -21,7 +21,7 @@ package body iconv is
 		if Handle = Invalid then
 			raise Name_Error;
 		end if;
-		Object.Handle := Handle;
+		Set_Handle (Object, Handle);
 	end Open;
 	
 	-- implementation
@@ -45,8 +45,9 @@ package body iconv is
 			new Ada.Unchecked_Conversion (System.Address, C.char_ptr);
 		function To_Pointer is
 			new Ada.Unchecked_Conversion (System.Address, C.char_const_ptr);
+		Handle : constant System.Address := iconv.Handle (Object);
 	begin
-		if Object.Handle = System.Null_Address then
+		if Handle = System.Null_Address then
 			raise Status_Error;
 		else
 			declare
@@ -59,7 +60,7 @@ package body iconv is
 				errno : C.signed_int;
 			begin
 				if C.iconv.iconv (
-					C.iconv.iconv_t (Object.Handle),
+					C.iconv.iconv_t (Handle),
 					In_Pointer'Access,
 					In_Size'Access,
 					Out_Pointer'Access,
@@ -157,13 +158,6 @@ package body iconv is
 		return Convert (Object.Writing, S, Substitute => Substitute);
 	end Encode;
 	
-	procedure Finalize (Object : in out Converter) is
-	begin
-		if C.iconv.iconv_close (C.iconv.iconv_t (Object.Handle)) /= 0 then
-			raise Status_Error;
-		end if;
-	end Finalize;
-	
 	procedure Iterate (Process : not null access procedure (Name : in String))
 		renames Inside.Iterate;
 	
@@ -183,9 +177,7 @@ package body iconv is
 			C.void_const_ptr (From_Code (From_Code'First)'Address),
 			Z_From_Code'Last);
 		Z_From_Code (Z_From_Code'Last) := C.char'Val (0);
-		return Result : Converter := (Ada.Finalization.Limited_Controlled with
-			Handle => <>)
-		do
+		return Result : Converter do
 			Open (
 				Result,
 				To_Code => Z_To_Code (0)'Access,
@@ -209,12 +201,7 @@ package body iconv is
 			C.void_const_ptr (Decoded (Decoded'First)'Address),
 			Z_Decoded'Last);
 		Z_Decoded (Z_Decoded'Last) := C.char'Val (0);
-		return Result : Encoding := (
-			Writing => (Ada.Finalization.Limited_Controlled with
-				Handle => <>),
-			Reading => (Ada.Finalization.Limited_Controlled with
-				Handle => <>))
-		do
+		return Result : Encoding do
 			Open (
 				Result.Writing,
 				To_Code => Z_Encoded (0)'Access,
@@ -225,5 +212,28 @@ package body iconv is
 				From_Code => Z_Encoded (0)'Access);
 		end return;
 	end Open;
+	
+	package body Controlled is
+		
+		function Handle (Object : Converter) return System.Address is
+		begin
+			return Object.Handle;
+		end Handle;
+		
+		procedure Set_Handle (
+			Object : in out Converter;
+			Handle : in System.Address) is
+		begin
+			Object.Handle := Handle;
+		end Set_Handle;
+		
+		procedure Finalize (Object : in out Converter) is
+		begin
+			if C.iconv.iconv_close (C.iconv.iconv_t (Object.Handle)) /= 0 then
+				raise Status_Error;
+			end if;
+		end Finalize;
+		
+	end Controlled;
 	
 end iconv;

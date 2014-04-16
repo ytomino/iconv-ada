@@ -70,13 +70,31 @@ package iconv is
 	
 private
 	
-	type Converter is
-		limited new Ada.Finalization.Limited_Controlled with
-	record
-		Handle : System.Address := System.Null_Address;
-	end record;
+	package Controlled is
+		
+		type Converter is limited private;
+		
+		function Handle (Object : Converter) return System.Address;
+		procedure Set_Handle (
+			Object : in out Converter;
+			Handle : in System.Address);
+		
+		pragma Inline (Handle);
+		pragma Inline (Set_Handle);
+		
+	private
+		
+		type Converter is
+			limited new Ada.Finalization.Limited_Controlled with
+		record
+			Handle : aliased System.Address := System.Null_Address;
+		end record;
+		
+		overriding procedure Finalize (Object : in out Converter);
+		
+	end Controlled;
 	
-	overriding procedure Finalize (Object : in out Converter);
+	type Converter is new Controlled.Converter;
 	
 	type Encoding is limited record
 		Writing : Converter;
