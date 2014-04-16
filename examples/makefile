@@ -3,16 +3,18 @@ SOURCEDIR=../source
 HOST=$(shell gcc -dumpmachine)
 TARGET=$(HOST)
 
+VERSION=$(shell gcc -dumpversion)
+
+BUILDDIR=$(TARGET).build
+
 ifeq ($(TARGET),$(HOST))
 GNATMAKE=gnatmake
 GCC=$(dir $(shell which $(GNATMAKE)))gcc
-BUILDDIR=build
-IMPORTDIR:=import
+BINLN=bin
 else
 GNATMAKE=$(TARGET)-gnatmake
 GCC=$(TARGET)-gcc
-BUILDDIR=build-$(TARGET)
-IMPORTDIR:=import-$(TARGET)
+BINLN=
 endif
 
 ifneq ($(findstring linux,$(TARGET)),)
@@ -22,24 +24,30 @@ ICONVTYPE=libiconv
 endif
 
 ifneq ($(DRAKE_RTSROOT),)
-DRAKE_RTSDIR=$(DRAKE_RTSROOT)/$(TARGET)
+DRAKE_RTSDIR=$(DRAKE_RTSROOT)/$(TARGET)/$(VERSION)
 endif
 ifneq ($(DRAKE_RTSDIR),)
-IMPORTDIR:=
+IMPORTDIR=
 MFLAGS=--RTS=$(abspath $(DRAKE_RTSDIR))
+else
+IMPORTDIR=$(BUILDDIR)/import
+MFLAGS=-I$(abspath $(IMPORTDIR))
 endif
 
 CFLAGS=-gnata -gnatwa -gnatyy-3chbs
 
 .PHONY: all clean
 
-all: $(BUILDDIR)/list $(BUILDDIR)/stream_r $(BUILDDIR)/stream_w $(BUILDDIR)/test_nop $(BUILDDIR)/version
+all: $(BUILDDIR)/list $(BUILDDIR)/stream_r $(BUILDDIR)/stream_w $(BUILDDIR)/test_nop $(BUILDDIR)/version $(BINLN)
 
 $(BUILDDIR)/%: %.adb $(BUILDDIR) $(IMPORTDIR) $(wildcard $(SOURCEDIR)/*)
-	cd $(BUILDDIR) && $(GNATMAKE) -g $(MFLAGS) -I../$(SOURCEDIR) -I../$(SOURCEDIR)/$(ICONVTYPE) -I../$(IMPORTDIR) $(CFLAGS) ../$< -largs $(LFLAGS)
+	cd $(BUILDDIR) && $(GNATMAKE) -g $(MFLAGS) -I../$(SOURCEDIR) -I../$(SOURCEDIR)/$(ICONVTYPE) $(CFLAGS) ../$< -largs $(LFLAGS)
 
 $(BUILDDIR):
 	mkdir $(BUILDDIR)
+
+$(BINLN): $(BUILDDIR)
+	ln -s $(BUILDDIR) $(BINLN)
 
 ifneq ($(IMPORTDIR),)
 $(IMPORTDIR): $(SOURCEDIR)/import.h
@@ -47,4 +55,4 @@ $(IMPORTDIR): $(SOURCEDIR)/import.h
 endif
 
 clean:
-	-rm -rf build* import*
+	-rm -rf *.build bin
