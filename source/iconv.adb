@@ -30,6 +30,56 @@ package body iconv is
 	function Version return String
 		renames Inside.Version;
 	
+	procedure Iterate (Process : not null access procedure (Name : in String))
+		renames Inside.Iterate;
+	
+	procedure Open (
+		Object : in out Converter;
+		To : String;
+		From : String)
+	is
+		C_To : C.char_array (0 .. To'Length);
+		C_From : C.char_array (0 .. From'Length);
+		Dummy : C.void_ptr;
+		pragma Unreferenced (Dummy);
+	begin
+		if Handle (Object) /= System.Null_Address then
+			raise Status_Error;
+		end if;
+		Dummy := C.string.memcpy (
+			C.void_ptr (C_To'Address),
+			C.void_const_ptr (To'Address),
+			C_To'Last);
+		C_To (C_To'Last) := C.char'Val (0);
+		Dummy := C.string.memcpy (
+			C.void_ptr (C_From'Address),
+			C.void_const_ptr (From'Address),
+			C_From'Last);
+		C_From (C_From'Last) := C.char'Val (0);
+		Open (
+			Object,
+			To_Code => C_To (0)'Access,
+			From_Code => C_From (0)'Access);
+	end Open;
+	
+	function Open (
+		To : String;
+		From : String)
+		return Converter is
+	begin
+		return Result : Converter do
+			Open (
+				Result,
+				To => To,
+				From => From);
+		end return;
+	end Open;
+	
+	function Is_Open (Object : Converter) return Boolean is
+	begin
+		return Handle (Object) /= System.Null_Address;
+	end Is_Open;
+	
 	procedure Convert (
 		Object : in Converter;
 		In_Item : in Ada.Streams.Stream_Element_Array;
@@ -131,56 +181,6 @@ package body iconv is
 			end;
 		end loop;
 	end Convert;
-	
-	procedure Iterate (Process : not null access procedure (Name : in String))
-		renames Inside.Iterate;
-	
-	procedure Open (
-		Object : in out Converter;
-		To : String;
-		From : String)
-	is
-		C_To : C.char_array (0 .. To'Length);
-		C_From : C.char_array (0 .. From'Length);
-		Dummy : C.void_ptr;
-		pragma Unreferenced (Dummy);
-	begin
-		if Handle (Object) /= System.Null_Address then
-			raise Status_Error;
-		end if;
-		Dummy := C.string.memcpy (
-			C.void_ptr (C_To'Address),
-			C.void_const_ptr (To'Address),
-			C_To'Last);
-		C_To (C_To'Last) := C.char'Val (0);
-		Dummy := C.string.memcpy (
-			C.void_ptr (C_From'Address),
-			C.void_const_ptr (From'Address),
-			C_From'Last);
-		C_From (C_From'Last) := C.char'Val (0);
-		Open (
-			Object,
-			To_Code => C_To (0)'Access,
-			From_Code => C_From (0)'Access);
-	end Open;
-	
-	function Open (
-		To : String;
-		From : String)
-		return Converter is
-	begin
-		return Result : Converter do
-			Open (
-				Result,
-				To => To,
-				From => From);
-		end return;
-	end Open;
-	
-	function Is_Open (Object : Converter) return Boolean is
-	begin
-		return Handle (Object) /= System.Null_Address;
-	end Is_Open;
 	
 	function Open (Encoded, Decoded : String) return Encoding is
 	begin

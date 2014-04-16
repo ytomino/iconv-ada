@@ -6,7 +6,13 @@ private with System;
 package iconv is
 	pragma Preelaborate;
 	
+	-- get info
+	
 	function Version return String;
+	
+	procedure Iterate (Process : not null access procedure (Name : in String));
+	
+	-- subsidiary types to converter
 	
 	package Errors is
 		type Error_Status is (Fine, Invalid, Illegal_Sequence);
@@ -17,6 +23,8 @@ package iconv is
 			Illegal_Sequence => C.errno.EILSEQ);
 	end Errors;
 	type Error_Status is new Errors.Error_Status;
+	
+	-- converter
 	
 	type Converter is limited private;
 	
@@ -54,16 +62,20 @@ package iconv is
 	function Open (Encoded, Decoded : String) return Encoding;
 	function Is_Open (Object : Encoding) return Boolean;
 	
-	-- get info
+	-- exceptions
 	
-	procedure Iterate (Process : not null access procedure (Name : in String));
-	
-	-- exception
-	
-	Name_Error : exception renames Ada.IO_Exceptions.Name_Error;
-	Status_Error : exception renames Ada.IO_Exceptions.Status_Error;
+	Name_Error : exception
+		renames Ada.IO_Exceptions.Name_Error;
+	Status_Error : exception
+		renames Ada.IO_Exceptions.Status_Error;
 	
 private
+	
+	-- max length of one multi-byte character
+	
+	Max_Length_Of_Single_Character : constant := 6; -- UTF-8
+	
+	-- converter
 	
 	package Controlled is
 		
@@ -95,7 +107,5 @@ private
 		Writing : Converter;
 		Reading : Converter;
 	end record;
-	
-	Max_Length_Of_Single_Character : constant := 6; -- UTF-8
 	
 end iconv;
