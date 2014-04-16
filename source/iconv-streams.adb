@@ -3,36 +3,6 @@ package body iconv.Streams is
 	use type Ada.Streams.Stream_Element_Offset;
 	use type Ada.Streams.Stream_Element_Array;
 	
-	procedure Convert (
-		Object : in Converter;
-		In_Item : in Ada.Streams.Stream_Element_Array;
-		In_Last : out Ada.Streams.Stream_Element_Offset;
-		Out_Item : out Ada.Streams.Stream_Element_Array;
-		Out_Last : out Ada.Streams.Stream_Element_Offset;
-		Status : out Error_Status)
-	is
-		In_Buffer_As_String : String (1 .. Natural (In_Item'Length));
-		for In_Buffer_As_String'Address use In_Item'Address;
-		In_Last_As_String : Natural;
-		Out_Buffer_As_String : String (1 .. Out_Item'Length);
-		for Out_Buffer_As_String'Address use Out_Item'Address;
-		Out_Last_As_String : Natural;
-	begin
-		Convert (
-			Object,
-			In_Buffer_As_String,
-			In_Last_As_String,
-			Out_Buffer_As_String,
-			Out_Last_As_String,
-			Status);
-		In_Last := In_Item'First
-			- Ada.Streams.Stream_Element_Offset (In_Buffer_As_String'First)
-			+ Ada.Streams.Stream_Element_Offset (In_Last_As_String);
-		Out_Last := Out_Item'First
-			- Ada.Streams.Stream_Element_Offset (Out_Buffer_As_String'First)
-			+ Ada.Streams.Stream_Element_Offset (Out_Last_As_String);
-	end Convert;
-	
 	function Create (
 		Target : not null access Ada.Streams.Root_Stream_Type'Class;
 		Encoding : not null access constant iconv.Encoding;
@@ -41,6 +11,9 @@ package body iconv.Streams is
 	is
 		pragma Suppress (Accessibility_Check);
 	begin
+		if not Is_Open (Encoding.all) then
+			raise Status_Error;
+		end if;
 		return Stream'(Ada.Streams.Root_Stream_Type with
 			Target => Target,
 			Encoding => Encoding,

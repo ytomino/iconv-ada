@@ -2,14 +2,6 @@ with Ada.Streams;
 package iconv.Streams is
 	pragma Preelaborate;
 	
-	procedure Convert (
-		Object : in Converter;
-		In_Item : in Ada.Streams.Stream_Element_Array;
-		In_Last : out Ada.Streams.Stream_Element_Offset;
-		Out_Item : out Ada.Streams.Stream_Element_Array;
-		Out_Last : out Ada.Streams.Stream_Element_Offset;
-		Status : out Error_Status);
-	
 	type Stream (<>) is limited new Ada.Streams.Root_Stream_Type with private;
 	
 	function Create (

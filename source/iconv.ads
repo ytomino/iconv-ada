@@ -1,5 +1,6 @@
 with Ada.Finalization;
 with Ada.IO_Exceptions;
+with Ada.Streams;
 private with C.errno;
 private with System;
 package iconv is
@@ -19,45 +20,39 @@ package iconv is
 	
 	type Converter is limited private;
 	
-	function Open (To_Code, From_Code : String) return Converter;
+	procedure Open (
+		Object : in out Converter;
+		To : in String;
+		From : in String);
+	function Open (
+		To : String;
+		From : String)
+		return Converter;
+	function Is_Open (Object : Converter) return Boolean;
 	
+	-- convert subsequence
 	procedure Convert (
 		Object : in Converter;
-		In_Item : in String;
-		In_Last : out Natural;
-		Out_Item : out String;
-		Out_Last : out Natural;
+		In_Item : in Ada.Streams.Stream_Element_Array;
+		In_Last : out Ada.Streams.Stream_Element_Offset;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
 		Status : out Error_Status);
 	
+	-- convert all character sequence with substitute
 	procedure Convert (
 		Object : in Converter;
-		In_Item : in String;
-		Out_Item : out String;
-		Out_Last : out Natural;
-		Substitute : in Character := '?');
-	
-	function Convert (
-		Object : Converter;
-		S : String;
-		Substitute : Character := '?')
-		return String;
+		In_Item : in Ada.Streams.Stream_Element_Array;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Substitute : in Ada.Streams.Stream_Element := Character'Pos ('?'));
 	
 	-- two-way
 	
 	type Encoding is limited private;
 	
 	function Open (Encoded, Decoded : String) return Encoding;
-	
-	function Encode (
-		Object : Encoding;
-		S : String;
-		Substitute : Character := '?')
-		return String;
-	function Decode (
-		Object : Encoding;
-		S : String;
-		Substitute : Character := '?')
-		return String;
+	function Is_Open (Object : Encoding) return Boolean;
 	
 	-- get info
 	

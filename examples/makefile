@@ -34,13 +34,15 @@ IMPORTDIR=$(BUILDDIR)/import
 MFLAGS=-I$(abspath $(IMPORTDIR))
 endif
 
+EXAMPLES=$(basename $(filter-out b~%,$(wildcard *.adb)))
+
 CFLAGS=-gnata -gnatwa -gnatyy-3chbs
 
-.PHONY: all clean
+.PHONY: all clean $(EXAMPLES)
 
-all: $(BUILDDIR)/list $(BUILDDIR)/stream_r $(BUILDDIR)/stream_w $(BUILDDIR)/test_nop $(BUILDDIR)/version $(BINLN)
+all: $(BUILDDIR) $(EXAMPLES) $(BINLN)
 
-$(BUILDDIR)/%: %.adb $(BUILDDIR) $(IMPORTDIR) $(wildcard $(SOURCEDIR)/*)
+$(BUILDDIR)/%: %.adb $(IMPORTDIR) $(wildcard $(SOURCEDIR)/*)
 	cd $(BUILDDIR) && $(GNATMAKE) -g $(MFLAGS) -I../$(SOURCEDIR) -I../$(SOURCEDIR)/$(ICONVTYPE) $(CFLAGS) ../$< -largs $(LFLAGS)
 
 $(BUILDDIR):
@@ -48,6 +50,8 @@ $(BUILDDIR):
 
 $(BINLN): $(BUILDDIR)
 	ln -s $(BUILDDIR) $(BINLN)
+
+$(EXAMPLES): %: $(BUILDDIR)/%
 
 ifneq ($(IMPORTDIR),)
 $(IMPORTDIR): $(SOURCEDIR)/import.h

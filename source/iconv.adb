@@ -4,6 +4,7 @@ with C.iconv;
 with C.string;
 with iconv.Inside;
 package body iconv is
+	use type Ada.Streams.Stream_Element_Offset;
 	use type System.Address;
 	use type C.signed_int;
 	use type C.size_t;
@@ -31,10 +32,10 @@ package body iconv is
 	
 	procedure Convert (
 		Object : in Converter;
-		In_Item : in String;
-		In_Last : out Natural;
-		Out_Item : out String;
-		Out_Last : out Natural;
+		In_Item : in Ada.Streams.Stream_Element_Array;
+		In_Last : out Ada.Streams.Stream_Element_Offset;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
 		Status : out Error_Status)
 	is
 		pragma Suppress (All_Checks);
@@ -84,26 +85,30 @@ package body iconv is
 				else
 					Status := Fine;
 				end if;
-				In_Last := In_Item'First + (In_Item'Length - Natural (In_Size)) - 1;
-				Out_Last := Out_Item'First + (Out_Item'Length - Natural (Out_Size)) - 1;
+				In_Last := In_Item'First
+					+ (In_Item'Length - Ada.Streams.Stream_Element_Offset (In_Size))
+					- 1;
+				Out_Last := Out_Item'First
+					+ (Out_Item'Length - Ada.Streams.Stream_Element_Offset (Out_Size))
+					- 1;
 			end;
 		end if;
 	end Convert;
-
+	
 	procedure Convert (
 		Object : in Converter;
-		In_Item : in String;
-		Out_Item : out String;
-		Out_Last : out Natural;
-		Substitute : in Character := '?')
+		In_Item : in Ada.Streams.Stream_Element_Array;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Substitute : in Ada.Streams.Stream_Element := Character'Pos ('?'))
 	is
-		In_Index : Natural := In_Item'First;
-		Out_Index : Natural := Out_Item'First;
+		In_Index : Ada.Streams.Stream_Element_Offset := In_Item'First;
+		Out_Index : Ada.Streams.Stream_Element_Offset := Out_Item'First;
 	begin
 		loop
 			declare
 				Status : Error_Status;
-				In_Last : Natural;
+				In_Last : Ada.Streams.Stream_Element_Offset;
 			begin
 				Convert (
 					Object,
@@ -126,92 +131,75 @@ package body iconv is
 			end;
 		end loop;
 	end Convert;
-
-	function Convert (
-		Object : Converter;
-		S : String;
-		Substitute : Character := '?')
-		return String
-	is
-		Result : aliased String (1 .. Max_Length_Of_Single_Character * S'Length);
-		Last : Natural;
-	begin
-		Convert (Object, S, Result, Last, Substitute => Substitute);
-		return Result (1 .. Last);
-	end Convert;
-
-	function Decode (
-		Object : Encoding;
-		S : String;
-		Substitute : Character := '?')
-		return String is
-	begin
-		return Convert (Object.Reading, S, Substitute => Substitute);
-	end Decode;
-	
-	function Encode (
-		Object : Encoding;
-		S : String;
-		Substitute : Character := '?')
-		return String is
-	begin
-		return Convert (Object.Writing, S, Substitute => Substitute);
-	end Encode;
 	
 	procedure Iterate (Process : not null access procedure (Name : in String))
 		renames Inside.Iterate;
 	
-	function Open (To_Code, From_Code : String) return Converter is
-		Z_To_Code : C.char_array (0 .. To_Code'Length);
-		Z_From_Code : C.char_array (0 .. From_Code'Length);
+	procedure Open (
+		Object : in out Converter;
+		To : String;
+		From : String)
+	is
+		C_To : C.char_array (0 .. To'Length);
+		C_From : C.char_array (0 .. From'Length);
 		Dummy : C.void_ptr;
 		pragma Unreferenced (Dummy);
 	begin
-		Dummy := C.string.memmove (
-			C.void_ptr (Z_To_Code (0)'Address),
-			C.void_const_ptr (To_Code (To_Code'First)'Address),
-			Z_To_Code'Last);
-		Z_To_Code (Z_To_Code'Last) := C.char'Val (0);
-		Dummy := C.string.memmove (
-			C.void_ptr (Z_From_Code (0)'Address),
-			C.void_const_ptr (From_Code (From_Code'First)'Address),
-			Z_From_Code'Last);
-		Z_From_Code (Z_From_Code'Last) := C.char'Val (0);
+		if Handle (Object) /= System.Null_Address then
+			raise Status_Error;
+		end if;
+		Dummy := C.string.memcpy (
+			C.void_ptr (C_To'Address),
+			C.void_const_ptr (To'Address),
+			C_To'Last);
+		C_To (C_To'Last) := C.char'Val (0);
+		Dummy := C.string.memcpy (
+			C.void_ptr (C_From'Address),
+			C.void_const_ptr (From'Address),
+			C_From'Last);
+		C_From (C_From'Last) := C.char'Val (0);
+		Open (
+			Object,
+			To_Code => C_To (0)'Access,
+			From_Code => C_From (0)'Access);
+	end Open;
+	
+	function Open (
+		To : String;
+		From : String)
+		return Converter is
+	begin
 		return Result : Converter do
 			Open (
 				Result,
-				To_Code => Z_To_Code (0)'Access,
-				From_Code => Z_From_Code (0)'Access);
+				To => To,
+				From => From);
 		end return;
 	end Open;
 	
-	function Open (Encoded, Decoded : String) return Encoding is
-		Z_Encoded : C.char_array (0 .. Encoded'Length);
-		Z_Decoded : C.char_array (0 .. Decoded'Length);
-		Dummy : C.void_ptr;
-		pragma Warnings (Off, Dummy);
+	function Is_Open (Object : Converter) return Boolean is
 	begin
-		Dummy := C.string.memmove (
-			C.void_ptr (Z_Encoded (0)'Address),
-			C.void_const_ptr (Encoded (Encoded'First)'Address),
-			Z_Encoded'Last);
-		Z_Encoded (Z_Encoded'Last) := C.char'Val (0);
-		Dummy := C.string.memmove (
-			C.void_ptr (Z_Decoded (0)'Address),
-			C.void_const_ptr (Decoded (Decoded'First)'Address),
-			Z_Decoded'Last);
-		Z_Decoded (Z_Decoded'Last) := C.char'Val (0);
+		return Handle (Object) /= System.Null_Address;
+	end Is_Open;
+	
+	function Open (Encoded, Decoded : String) return Encoding is
+	begin
 		return Result : Encoding do
 			Open (
 				Result.Writing,
-				To_Code => Z_Encoded (0)'Access,
-				From_Code => Z_Decoded (0)'Access);
+				To => Encoded,
+				From => Decoded);
 			Open (
 				Result.Reading,
-				To_Code => Z_Decoded (0)'Access,
-				From_Code => Z_Encoded (0)'Access);
+				To => Decoded,
+				From => Encoded);
 		end return;
 	end Open;
+	
+	function Is_Open (Object : Encoding) return Boolean is
+	begin
+		return Is_Open (Object.Reading);
+	end Is_Open;
 	
 	package body Controlled is
 		
