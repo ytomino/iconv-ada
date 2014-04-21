@@ -81,13 +81,13 @@ private
 		
 		type Converter is limited private;
 		
-		function Handle (Object : Converter) return System.Address;
-		procedure Set_Handle (
+		procedure Open (
 			Object : in out Converter;
-			Handle : in System.Address);
+			To_Code, From_Code : not null access constant C.char);
+		
+		function Handle (Object : Converter) return System.Address;
 		
 		pragma Inline (Handle);
-		pragma Inline (Set_Handle);
 		
 	private
 		

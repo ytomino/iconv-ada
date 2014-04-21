@@ -10,21 +10,6 @@ package body iconv is
 	use type C.size_t;
 	use type C.unsigned_int;
 	
-	procedure Open (
-		Object : in out Converter;
-		To_Code, From_Code : not null access constant C.char)
-	is
-		Invalid : constant System.Address := System.Storage_Elements.To_Address (
-			System.Storage_Elements.Integer_Address'Mod (-1));
-		Handle : constant System.Address :=
-			System.Address (C.iconv.iconv_open (To_Code, From_Code));
-	begin
-		if Handle = Invalid then
-			raise Name_Error;
-		end if;
-		Set_Handle (Object, Handle);
-	end Open;
-	
 	-- implementation
 	
 	function Version return String
@@ -203,17 +188,25 @@ package body iconv is
 	
 	package body Controlled is
 		
+		procedure Open (
+			Object : in out Converter;
+			To_Code, From_Code : not null access constant C.char)
+		is
+			Invalid : constant System.Address := System.Storage_Elements.To_Address (
+				System.Storage_Elements.Integer_Address'Mod (-1));
+			Handle : constant System.Address :=
+				System.Address (C.iconv.iconv_open (To_Code, From_Code));
+		begin
+			if Handle = Invalid then
+				raise Name_Error;
+			end if;
+			Object.Handle := Handle;
+		end Open;
+		
 		function Handle (Object : Converter) return System.Address is
 		begin
 			return Object.Handle;
 		end Handle;
-		
-		procedure Set_Handle (
-			Object : in out Converter;
-			Handle : in System.Address) is
-		begin
-			Object.Handle := Handle;
-		end Set_Handle;
 		
 		procedure Finalize (Object : in out Converter) is
 		begin
