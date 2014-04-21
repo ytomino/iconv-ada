@@ -1,3 +1,4 @@
+pragma Ada_2012;
 with Ada.Unchecked_Conversion;
 with System.Storage_Elements;
 with C.iconv;
@@ -64,6 +65,29 @@ package body iconv is
 	begin
 		return Handle (Object) /= System.Null_Address;
 	end Is_Open;
+	
+	function Substitute (Object : Converter)
+		return Ada.Streams.Stream_Element_Array
+	is
+		NC_Converter : constant not null access constant Non_Controlled_Converter :=
+			Constant_Reference (Object);
+	begin
+		return NC_Converter.Substitute (1 .. NC_Converter.Substitute_Length);
+	end Substitute;
+	
+	procedure Set_Substitute (
+		Object : in out Converter;
+		Substitute : in Ada.Streams.Stream_Element_Array)
+	is
+		NC_Converter : constant not null access Non_Controlled_Converter :=
+			Reference (Object);
+	begin
+		if Substitute'Length > NC_Converter.Substitute'Length then
+			raise Constraint_Error;
+		end if;
+		NC_Converter.Substitute_Length := Substitute'Length;
+		NC_Converter.Substitute (1 .. NC_Converter.Substitute_Length) := Substitute;
+	end Set_Substitute;
 	
 	procedure Convert (
 		Object : in Converter;
@@ -134,8 +158,7 @@ package body iconv is
 		Object : in Converter;
 		In_Item : in Ada.Streams.Stream_Element_Array;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
-		Out_Last : out Ada.Streams.Stream_Element_Offset;
-		Substitute : in Ada.Streams.Stream_Element := Character'Pos ('?'))
+		Out_Last : out Ada.Streams.Stream_Element_Offset)
 	is
 		In_Index : Ada.Streams.Stream_Element_Offset := In_Item'First;
 		Out_Index : Ada.Streams.Stream_Element_Offset := Out_Item'First;
@@ -158,7 +181,18 @@ package body iconv is
 					when Fine =>
 						null;
 					when Invalid | Illegal_Sequence =>
-						Out_Item (Out_Index) := Substitute;
+						declare
+							Is_Overflow : Boolean;
+						begin
+							Put_Substitute (
+								Object,
+								Out_Item (Out_Index .. Out_Item'Last),
+								Out_Index,
+								Is_Overflow);
+							if Is_Overflow then
+								raise Constraint_Error;
+							end if;
+						end;
 						Out_Index := Out_Index + 1;
 						In_Index := In_Index + 1;
 				end case;
@@ -201,12 +235,32 @@ package body iconv is
 				raise Name_Error;
 			end if;
 			Object.Handle := Handle;
+			-- about "To"
+			Object.Data.Substitute_Length := 0;
 		end Open;
 		
 		function Handle (Object : Converter) return System.Address is
 		begin
 			return Object.Handle;
 		end Handle;
+		
+		function Reference (Object : in out Converter)
+			return not null access Non_Controlled_Converter is
+		begin
+			if Object.Handle = System.Null_Address then
+				raise Status_Error;
+			end if;
+			return Object.Data'Unchecked_Access;
+		end Reference;
+		
+		function Constant_Reference (Object : Converter)
+			return not null access constant Non_Controlled_Converter is
+		begin
+			if Object.Handle = System.Null_Address then
+				raise Status_Error;
+			end if;
+			return Object.Data'Unchecked_Access;
+		end Constant_Reference;
 		
 		procedure Finalize (Object : in out Converter) is
 		begin
@@ -216,5 +270,23 @@ package body iconv is
 		end Finalize;
 		
 	end Controlled;
+	
+	procedure Put_Substitute (
+		Object : in Converter;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Is_Overflow : out Boolean)
+	is
+		NC_Converter : constant not null access constant Non_Controlled_Converter :=
+			Constant_Reference (Object);
+	begin
+		Out_Last := Out_Item'First - 1;
+		Is_Overflow := Out_Item'Length < NC_Converter.Substitute_Length;
+		if not Is_Overflow then
+			Out_Last := Out_Last + NC_Converter.Substitute_Length;
+			Out_Item (Out_Item'First .. Out_Last) :=
+				NC_Converter.Substitute (1 .. NC_Converter.Substitute_Length);
+		end if;
+	end Put_Substitute;
 	
 end iconv;

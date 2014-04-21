@@ -5,8 +5,7 @@ package body iconv.Streams is
 	
 	function Create (
 		Target : not null access Ada.Streams.Root_Stream_Type'Class;
-		Encoding : not null access constant iconv.Encoding;
-		Substitute : Character := '?')
+		Encoding : not null access constant iconv.Encoding)
 		return Stream
 	is
 		pragma Suppress (Accessibility_Check);
@@ -20,8 +19,7 @@ package body iconv.Streams is
 			In_Buffer => <>,
 			Out_Buffer => <>,
 			In_Size => 0,
-			Out_Size => 0,
-			Substitute => Character'Pos (Substitute));
+			Out_Size => 0);
 	end Create;
 	
 	overriding procedure Read (
@@ -74,9 +72,19 @@ package body iconv.Streams is
 						when Invalid =>
 							Want_Tail := True;
 						when Illegal_Sequence =>
+							declare
+								Is_Overflow : Boolean;
+							begin
+								Put_Substitute (
+									Object.Encoding.Reading,
+									Object.Out_Buffer (Out_Last + 1 .. Object.Out_Buffer'Last),
+									Out_Last,
+									Is_Overflow);
+								if Is_Overflow then
+									exit; -- wait a next try
+								end if;
+							end;
 							In_Last := In_Last + 1;
-							Out_Last := Out_Last + 1;
-							Object.Out_Buffer (Out_Last) := Object.Substitute;
 					end case;
 					Object.Out_Size := Out_Last;
 					declare
@@ -142,7 +150,18 @@ package body iconv.Streams is
 							when Invalid =>
 								exit; -- wait tail-bytes
 							when Illegal_Sequence =>
-								Out_Buffer (Out_Index) := Object.Substitute;
+								declare
+									Is_Overflow : Boolean;
+								begin
+									Put_Substitute (
+										Object.Encoding.Writing,
+										Out_Buffer (Out_Index .. Out_Buffer'Last),
+										Out_Index,
+										Is_Overflow);
+									if Is_Overflow then
+										exit; -- wait a next try
+									end if;
+								end;
 								Out_Index := Out_Index + 1;
 								In_Index := In_Index + 1;
 						end case;

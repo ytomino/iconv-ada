@@ -28,13 +28,11 @@ package iconv.Generic_Strings is
 		Object : in Decoder;
 		In_Item : in Ada.Streams.Stream_Element_Array;
 		Out_Item : out String_Type;
-		Out_Last : out Natural;
-		Substitute : in Character_Type := Character_Type'Val (Character'Pos ('?')));
+		Out_Last : out Natural);
 	
 	function Decode (
 		Object : Decoder;
-		S : Ada.Streams.Stream_Element_Array;
-		Substitute : Character_Type := Character_Type'Val (Character'Pos ('?')))
+		S : Ada.Streams.Stream_Element_Array)
 		return String_Type;
 	
 	-- encoder
@@ -60,13 +58,11 @@ package iconv.Generic_Strings is
 		Object : in Encoder;
 		In_Item : in String_Type;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
-		Out_Last : out Ada.Streams.Stream_Element_Offset;
-		Substitute : in Ada.Streams.Stream_Element := Character'Pos ('?'));
+		Out_Last : out Ada.Streams.Stream_Element_Offset);
 	
 	function Encode (
 		Object : Encoder;
-		S : String_Type;
-		Substitute : Ada.Streams.Stream_Element := Character'Pos ('?'))
+		S : String_Type)
 		return Ada.Streams.Stream_Element_Array;
 	
 end iconv.Generic_Strings;

@@ -47,8 +47,7 @@ package body iconv.Generic_Strings is
 		Object : in Decoder;
 		In_Item : in Ada.Streams.Stream_Element_Array;
 		Out_Item : out String_Type;
-		Out_Last : out Natural;
-		Substitute : in Character_Type := Character_Type'Val (Character'Pos ('?')))
+		Out_Last : out Natural)
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
@@ -62,16 +61,14 @@ package body iconv.Generic_Strings is
 			Object,
 			In_Item,
 			Out_Item_2,
-			Out_Last_2,
-			Substitute => Character_Type'Pos (Substitute));
+			Out_Last_2);
 		pragma Assert (Out_Last_2 rem CS_In_SE = 0);
 		Out_Last := Out_Item'First + Natural (Out_Last_2 / CS_In_SE) - 1;
 	end Decode;
 	
 	function Decode (
 		Object : Decoder;
-		S : Ada.Streams.Stream_Element_Array;
-		Substitute : Character_Type := Character_Type'Val (Character'Pos ('?')))
+		S : Ada.Streams.Stream_Element_Array)
 		return String_Type
 	is
 		Result : String_Type (
@@ -83,8 +80,7 @@ package body iconv.Generic_Strings is
 			Object,
 			S,
 			Result,
-			Last,
-			Substitute => Substitute);
+			Last);
 		return Result (1 .. Last);
 	end Decode;
 	
@@ -134,8 +130,7 @@ package body iconv.Generic_Strings is
 		Object : in Encoder;
 		In_Item : in String_Type;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
-		Out_Last : out Ada.Streams.Stream_Element_Offset;
-		Substitute : in Ada.Streams.Stream_Element := Character'Pos ('?'))
+		Out_Last : out Ada.Streams.Stream_Element_Offset)
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
@@ -148,14 +143,12 @@ package body iconv.Generic_Strings is
 			Object,
 			In_Item_2,
 			Out_Item,
-			Out_Last,
-			Substitute => Substitute);
+			Out_Last);
 	end Encode;
 	
 	function Encode (
 		Object : Encoder;
-		S : String_Type;
-		Substitute : Ada.Streams.Stream_Element := Character'Pos ('?'))
+		S : String_Type)
 		return Ada.Streams.Stream_Element_Array
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
@@ -169,8 +162,7 @@ package body iconv.Generic_Strings is
 			Object,
 			S,
 			Result,
-			Last,
-			Substitute => Substitute);
+			Last);
 		return Result (0 .. Last);
 	end Encode;
 	

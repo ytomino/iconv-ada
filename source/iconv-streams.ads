@@ -6,8 +6,7 @@ package iconv.Streams is
 	
 	function Create (
 		Target : not null access Ada.Streams.Root_Stream_Type'Class;
-		Encoding : not null access constant iconv.Encoding;
-		Substitute : Character := '?')
+		Encoding : not null access constant iconv.Encoding)
 		return Stream;
 	
 private
@@ -21,7 +20,6 @@ private
 			(1 .. Max_Length_Of_Single_Character);
 		In_Size : Ada.Streams.Stream_Element_Count;
 		Out_Size : Ada.Streams.Stream_Element_Count;
-		Substitute : Ada.Streams.Stream_Element;
 	end record;
 	
 	overriding procedure Read (
