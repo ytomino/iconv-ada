@@ -84,7 +84,10 @@ package body iconv.Streams is
 									exit; -- wait a next try
 								end if;
 							end;
-							In_Last := In_Last + 1;
+							-- skip one element
+							In_Last := Ada.Streams.Stream_Element_Offset'Min (
+								Object.In_Size,
+								In_Last + Min_Size_In_From_Stream_Elements (Object.Encoding.Writing));
 					end case;
 					Object.Out_Size := Out_Last;
 					declare
@@ -163,7 +166,11 @@ package body iconv.Streams is
 									end if;
 								end;
 								Out_Index := Out_Index + 1;
-								In_Index := In_Index + 1;
+								-- skip one element
+								In_Index := Ada.Streams.Stream_Element_Offset'Min (
+									Object.In_Size,
+									In_Index
+										+ Min_Size_In_From_Stream_Elements (Object.Encoding.Writing));
 						end case;
 						exit when In_Index > In_Buffer'Last;
 					end;

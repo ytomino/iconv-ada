@@ -19,7 +19,7 @@ begin
 		iconv.Strings.Set_Substitute (D, (0 => Character'Pos ('?')));
 		pragma Assert (
 			iconv.Strings.Decode (D, U16BE_A & U16BE_JAPANEASE_A & U16BE_A) =
-			L1_A & "??" & L1_A);
+			L1_A & "?" & L1_A);
 	end;
 	declare
 		E : iconv.Strings.Encoder := iconv.Strings.To ("UTF-16BE");

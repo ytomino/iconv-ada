@@ -66,6 +66,15 @@ package body iconv is
 		return Handle (Object) /= System.Null_Address;
 	end Is_Open;
 	
+	function Min_Size_In_From_Stream_Elements (Object : Converter)
+		return Ada.Streams.Stream_Element_Offset
+	is
+		NC_Converter : constant not null access constant Non_Controlled_Converter :=
+			Constant_Reference (Object);
+	begin
+		return NC_Converter.Min_Size_In_From_Stream_Elements;
+	end Min_Size_In_From_Stream_Elements;
+	
 	function Substitute (Object : Converter)
 		return Ada.Streams.Stream_Element_Array
 	is
@@ -160,6 +169,8 @@ package body iconv is
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset)
 	is
+		NC_Converter : constant not null access constant Non_Controlled_Converter :=
+			Constant_Reference (Object);
 		In_Index : Ada.Streams.Stream_Element_Offset := In_Item'First;
 		Out_Index : Ada.Streams.Stream_Element_Offset := Out_Item'First;
 	begin
@@ -194,7 +205,18 @@ package body iconv is
 							end if;
 						end;
 						Out_Index := Out_Index + 1;
-						In_Index := In_Index + 1;
+						declare
+							New_Last : Ada.Streams.Stream_Element_Offset :=
+								In_Last + NC_Converter.Min_Size_In_From_Stream_Elements;
+						begin
+							if New_Last > In_Item'Last
+								or else New_Last < In_Last -- overflow
+							then
+								New_Last := In_Item'Last;
+							end if;
+							In_Last := New_Last;
+							In_Index := New_Last + 1;
+						end;
 				end case;
 				exit when In_Index > In_Item'Last;
 			end;
@@ -235,6 +257,37 @@ package body iconv is
 				raise Name_Error;
 			end if;
 			Object.Handle := Handle;
+			-- about "From"
+			Object.Data.Min_Size_In_From_Stream_Elements := 1; -- fallback
+			declare
+				In_Buffer : aliased constant C.char_array (
+					0 ..
+					Max_Length_Of_Single_Character - 1) := (others => C.char'Val (0));
+			begin
+				for I in C.size_t'(1) .. Max_Length_Of_Single_Character loop
+					declare
+						In_Pointer : aliased C.char_const_ptr := In_Buffer (0)'Unchecked_Access;
+						In_Size : aliased C.size_t := I;
+						Out_Buffer : aliased C.char_array (
+							0 ..
+							Max_Length_Of_Single_Character - 1);
+						Out_Pointer : aliased C.char_ptr := Out_Buffer (0)'Unchecked_Access;
+						Out_Size : aliased C.size_t := Max_Length_Of_Single_Character;
+					begin
+						if C.iconv.iconv (
+							C.iconv.iconv_t (Handle),
+							In_Pointer'Access,
+							In_Size'Access,
+							Out_Pointer'Access,
+							Out_Size'Access) /= C.size_t'Last
+						then
+							Object.Data.Min_Size_In_From_Stream_Elements :=
+								Ada.Streams.Stream_Element_Offset (I);
+							exit;
+						end if;
+					end;
+				end loop;
+			end;
 			-- about "To"
 			Object.Data.Substitute_Length := 0;
 		end Open;

@@ -39,6 +39,9 @@ package iconv is
 		return Converter;
 	function Is_Open (Object : Converter) return Boolean;
 	
+	function Min_Size_In_From_Stream_Elements (Object : Converter)
+		return Ada.Streams.Stream_Element_Offset;
+	
 	function Substitute (Object : Converter)
 		return Ada.Streams.Stream_Element_Array;
 	
@@ -86,6 +89,8 @@ private
 	-- converter
 	
 	type Non_Controlled_Converter is record
+		-- about "From"
+		Min_Size_In_From_Stream_Elements : Ada.Streams.Stream_Element_Offset;
 		-- about "To"
 		Substitute_Length : Ada.Streams.Stream_Element_Offset;
 		Substitute : Ada.Streams.Stream_Element_Array (
