@@ -265,7 +265,7 @@ package body iconv is
 		procedure Finalize (Object : in out Converter) is
 		begin
 			if C.iconv.iconv_close (C.iconv.iconv_t (Object.Handle)) /= 0 then
-				raise Status_Error;
+				null; -- raise Status_Error;
 			end if;
 		end Finalize;
 		
