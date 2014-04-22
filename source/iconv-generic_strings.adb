@@ -1,6 +1,13 @@
 package body iconv.Generic_Strings is
 	use type Ada.Streams.Stream_Element_Offset;
 	
+	pragma Compile_Time_Error (
+		String_Type'Component_Size /= Character_Type'Size,
+		"String_Type is not packed");
+	pragma Compile_Time_Error (
+		Character_Type'Size rem Ada.Streams.Stream_Element'Size /= 0,
+		"String_Type could not be treated as Stream_Element_Array");
+	
 	-- decoder
 	
 	function From (
