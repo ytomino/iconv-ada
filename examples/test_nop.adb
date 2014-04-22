@@ -18,7 +18,14 @@ begin
 				Out_Last : Ada.Streams.Stream_Element_Offset;
 				Status : iconv.Substituting_Status_Type;
 			begin
-				iconv.Convert (C, (0 .. -1 => <>), In_Last, Out_Item, Out_Last, Status);
+				iconv.Convert (
+					C,
+					(0 .. -1 => <>),
+					In_Last,
+					Out_Item,
+					Out_Last,
+					True,
+					Status);
 				raise Program_Error; -- Status_Error shold be raised
 			end;
 		exception

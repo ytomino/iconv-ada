@@ -21,6 +21,14 @@ package iconv is
 		Illegal_Sequence, -- a input character could not be mapped to the output
 		Truncated); -- the input buffer is broken off at a multi-byte character
 	
+	type Continuing_Status_Type is
+		new Subsequence_Status_Type range
+			Success ..
+			Subsequence_Status_Type'Last;
+	type Finishing_Status_Type is
+		new Subsequence_Status_Type range
+			Finished ..
+			Overflow;
 	type Status_Type is
 		new Subsequence_Status_Type range
 			Finished ..
@@ -30,6 +38,8 @@ package iconv is
 		new Status_Type range
 			Finished ..
 			Overflow;
+	
+	subtype True_Only is Boolean range True .. True;
 	
 	-- converter
 	
@@ -62,7 +72,33 @@ package iconv is
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Finish : in Boolean;
 		Status : out Subsequence_Status_Type);
+	
+	procedure Convert (
+		Object : in Converter;
+		In_Item : in Ada.Streams.Stream_Element_Array;
+		In_Last : out Ada.Streams.Stream_Element_Offset;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Status : out Continuing_Status_Type);
+	
+	procedure Convert (
+		Object : in Converter;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Finish : in True_Only;
+		Status : out Finishing_Status_Type);
+	
+	-- convert all character sequence
+	procedure Convert (
+		Object : in Converter;
+		In_Item : in Ada.Streams.Stream_Element_Array;
+		In_Last : out Ada.Streams.Stream_Element_Offset;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Finish : in True_Only;
+		Status : out Status_Type);
 	
 	-- convert all character sequence with substitute
 	procedure Convert (
@@ -71,6 +107,7 @@ package iconv is
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Finish : in True_Only;
 		Status : out Substituting_Status_Type);
 	
 	-- two-way

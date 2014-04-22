@@ -21,7 +21,33 @@ package iconv.Generic_Strings is
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out String_Type;
 		Out_Last : out Natural;
+		Finish : in Boolean;
 		Status : out Subsequence_Status_Type);
+	
+	procedure Decode (
+		Object : Decoder;
+		In_Item : Ada.Streams.Stream_Element_Array;
+		In_Last : out Ada.Streams.Stream_Element_Offset;
+		Out_Item : out String_Type;
+		Out_Last : out Natural;
+		Status : out Continuing_Status_Type);
+	
+	procedure Decode (
+		Object : Decoder;
+		Out_Item : out String_Type;
+		Out_Last : out Natural;
+		Finish : True_Only;
+		Status : out Finishing_Status_Type);
+	
+	-- decode all character sequence
+	procedure Decode (
+		Object : Decoder;
+		In_Item : Ada.Streams.Stream_Element_Array;
+		In_Last : out Ada.Streams.Stream_Element_Offset;
+		Out_Item : out String_Type;
+		Out_Last : out Natural;
+		Finish : True_Only;
+		Status : out Status_Type);
 	
 	-- decode all character sequence with substitute
 	procedure Decode (
@@ -30,6 +56,7 @@ package iconv.Generic_Strings is
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out String_Type;
 		Out_Last : out Natural;
+		Finish : in True_Only;
 		Status : out Substituting_Status_Type);
 	
 	function Decode (
@@ -53,7 +80,34 @@ package iconv.Generic_Strings is
 		In_Last : out Natural;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Finish : in Boolean;
 		Status : out Subsequence_Status_Type);
+	
+	procedure Encode (
+		Object : Encoder;
+		In_Item : String_Type;
+		In_Last : out Natural;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Status : out Continuing_Status_Type);
+	
+	procedure Encode (
+		Object : Encoder;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Finish : True_Only;
+		Status : out Finishing_Status_Type)
+		renames Convert; -- inherited
+	
+	-- encode all character sequence
+	procedure Encode (
+		Object : Encoder;
+		In_Item : String_Type;
+		In_Last : out Natural;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Finish : True_Only;
+		Status : out Status_Type);
 	
 	-- encode all character sequence with substitute
 	procedure Encode (
@@ -62,6 +116,7 @@ package iconv.Generic_Strings is
 		In_Last : out Natural;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Finish : in True_Only;
 		Status : out Substituting_Status_Type);
 	
 	function Encode (

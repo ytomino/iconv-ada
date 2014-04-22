@@ -90,7 +90,38 @@ package body iconv is
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Finish : in Boolean;
 		Status : out Subsequence_Status_Type)
+	is
+		Continuing_Status : Continuing_Status_Type;
+		Finishing_Status : Finishing_Status_Type;
+	begin
+		Convert (
+			Object,
+			In_Item,
+			In_Last,
+			Out_Item,
+			Out_Last,
+			Status => Continuing_Status);
+		Status := Subsequence_Status_Type (Continuing_Status);
+		if Finish and then Status = Success and then In_Last = In_Item'Last then
+			Convert (
+				Object,
+				Out_Item (Out_Last + 1 .. Out_Item'Last),
+				Out_Last,
+				Finish => True,
+				Status => Finishing_Status);
+			Status := Subsequence_Status_Type (Finishing_Status);
+		end if;
+	end Convert;
+	
+	procedure Convert (
+		Object : in Converter;
+		In_Item : in Ada.Streams.Stream_Element_Array;
+		In_Last : out Ada.Streams.Stream_Element_Offset;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Status : out Continuing_Status_Type)
 	is
 		pragma Suppress (All_Checks);
 		-- C.char_ptr will be mapped access C.char / Interfaces.C.chars_ptr,
@@ -138,9 +169,6 @@ package body iconv is
 					end case;
 				else
 					Status := Success;
-					if In_Size = 0 then
-						Status := Finished;
-					end if;
 				end if;
 				In_Last := In_Item'First
 					+ (In_Item'Length - Ada.Streams.Stream_Element_Offset (In_Size))
@@ -154,10 +182,125 @@ package body iconv is
 	
 	procedure Convert (
 		Object : in Converter;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Finish : in True_Only;
+		Status : out Finishing_Status_Type)
+	is
+		pragma Unreferenced (Finish);
+		function To_Pointer is
+			new Ada.Unchecked_Conversion (System.Address, C.char_ptr);
+		Handle : constant System.Address := iconv.Handle (Object);
+	begin
+		if Handle = System.Null_Address then
+			raise Status_Error;
+		else
+			declare
+				Out_Pointer : aliased C.char_ptr := To_Pointer (Out_Item'Address);
+				Out_Size : aliased C.size_t := Out_Item'Length;
+				errno : C.signed_int;
+			begin
+				if C.iconv.iconv (
+					C.iconv.iconv_t (Handle),
+					C.char_const_ptr_ptr'(null),
+					null,
+					Out_Pointer'Access,
+					Out_Size'Access) = C.size_t'Last
+				then
+					errno := C.errno.errno;
+					case errno is
+						when C.errno.E2BIG =>
+							Status := Overflow;
+						when others => -- unknown
+							raise Program_Error
+								with "iconv failed (errno =" & C.signed_int'Image (errno) & ")";
+					end case;
+				else
+					Status := Finished;
+				end if;
+				Out_Last := Out_Item'First
+					+ (Out_Item'Length - Ada.Streams.Stream_Element_Offset (Out_Size))
+					- 1;
+			end;
+		end if;
+	end Convert;
+	
+	procedure Convert (
+		Object : in Converter;
 		In_Item : in Ada.Streams.Stream_Element_Array;
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Finish : in True_Only;
+		Status : out Status_Type)
+	is
+		NC_Converter : constant not null access constant Non_Controlled_Converter :=
+			Constant_Reference (Object);
+	begin
+		In_Last := In_Item'First - 1;
+		Out_Last := Out_Item'First - 1;
+		loop
+			declare
+				Subsequence_Status : Subsequence_Status_Type;
+			begin
+				Convert (
+					Object,
+					In_Item (In_Last + 1 .. In_Item'Last),
+					In_Last,
+					Out_Item (Out_Last + 1 .. Out_Item'Last),
+					Out_Last,
+					Finish => Finish,
+					Status => Subsequence_Status);
+				pragma Assert (Subsequence_Status in
+					Subsequence_Status_Type (Status_Type'First) ..
+					Subsequence_Status_Type (Status_Type'Last));
+				case Status_Type (Subsequence_Status) is
+					when Finished =>
+						Status := Finished;
+						return;
+					when Success =>
+						Status := Success;
+						return;
+					when Overflow =>
+						Status := Overflow;
+						return;
+					when Illegal_Sequence =>
+						declare
+							Is_Overflow : Boolean;
+						begin
+							Put_Substitute (
+								Object,
+								Out_Item (Out_Last + 1 .. Out_Item'Last),
+								Out_Last,
+								Is_Overflow);
+							if Is_Overflow then
+								Status := Overflow;
+								return; -- wait a next try
+							end if;
+						end;
+						declare
+							New_Last : Ada.Streams.Stream_Element_Offset :=
+								In_Last + NC_Converter.Min_Size_In_From_Stream_Elements;
+						begin
+							if New_Last > In_Item'Last
+								or else New_Last < In_Last -- overflow
+							then
+								New_Last := In_Item'Last;
+							end if;
+							In_Last := New_Last;
+						end;
+				end case;
+			end;
+		end loop;
+	end Convert;
+	
+	procedure Convert (
+		Object : in Converter;
+		In_Item : in Ada.Streams.Stream_Element_Array;
+		In_Last : out Ada.Streams.Stream_Element_Offset;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Finish : in True_Only;
 		Status : out Substituting_Status_Type)
 	is
 		NC_Converter : constant not null access constant Non_Controlled_Converter :=
@@ -175,6 +318,7 @@ package body iconv is
 					In_Last,
 					Out_Item (Out_Last + 1 .. Out_Item'Last),
 					Out_Last,
+					Finish => Finish,
 					Status => Subsequence_Status);
 				pragma Assert (Subsequence_Status in
 					Subsequence_Status_Type (Status_Type'First) ..

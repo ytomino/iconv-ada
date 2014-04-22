@@ -22,7 +22,36 @@ package body iconv.Generic_Strings is
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out String_Type;
 		Out_Last : out Natural;
+		Finish : in Boolean;
 		Status : out Subsequence_Status_Type)
+	is
+		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
+			Character_Type'Size / Ada.Streams.Stream_Element'Size;
+		Out_Item_2 : Ada.Streams.Stream_Element_Array (
+			1 ..
+			Out_Item'Length * CS_In_SE);
+		for Out_Item_2'Address use Out_Item'Address;
+		Out_Last_2 : Ada.Streams.Stream_Element_Offset;
+	begin
+		Convert (
+			Object,
+			In_Item,
+			In_Last,
+			Out_Item_2,
+			Out_Last_2,
+			Finish => Finish,
+			Status => Status);
+		pragma Assert (Out_Last_2 rem CS_In_SE = 0);
+		Out_Last := Out_Item'First + Natural (Out_Last_2 / CS_In_SE) - 1;
+	end Decode;
+	
+	procedure Decode (
+		Object : Decoder;
+		In_Item : Ada.Streams.Stream_Element_Array;
+		In_Last : out Ada.Streams.Stream_Element_Offset;
+		Out_Item : out String_Type;
+		Out_Last : out Natural;
+		Status : out Continuing_Status_Type)
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
@@ -44,11 +73,66 @@ package body iconv.Generic_Strings is
 	end Decode;
 	
 	procedure Decode (
+		Object : Decoder;
+		Out_Item : out String_Type;
+		Out_Last : out Natural;
+		Finish : True_Only;
+		Status : out Finishing_Status_Type)
+	is
+		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
+			Character_Type'Size / Ada.Streams.Stream_Element'Size;
+		Out_Item_2 : Ada.Streams.Stream_Element_Array (
+			1 ..
+			Out_Item'Length * CS_In_SE);
+		for Out_Item_2'Address use Out_Item'Address;
+		Out_Last_2 : Ada.Streams.Stream_Element_Offset;
+	begin
+		Convert (
+			Object,
+			Out_Item_2,
+			Out_Last_2,
+			Finish => Finish,
+			Status => Status);
+		pragma Assert (Out_Last_2 rem CS_In_SE = 0);
+		Out_Last := Out_Item'First + Natural (Out_Last_2 / CS_In_SE) - 1;
+	end Decode;
+	
+	procedure Decode (
+		Object : Decoder;
+		In_Item : Ada.Streams.Stream_Element_Array;
+		In_Last : out Ada.Streams.Stream_Element_Offset;
+		Out_Item : out String_Type;
+		Out_Last : out Natural;
+		Finish : True_Only;
+		Status : out Status_Type)
+	is
+		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
+			Character_Type'Size / Ada.Streams.Stream_Element'Size;
+		Out_Item_2 : Ada.Streams.Stream_Element_Array (
+			1 ..
+			Out_Item'Length * CS_In_SE);
+		for Out_Item_2'Address use Out_Item'Address;
+		Out_Last_2 : Ada.Streams.Stream_Element_Offset;
+	begin
+		Convert (
+			Object,
+			In_Item,
+			In_Last,
+			Out_Item_2,
+			Out_Last_2,
+			Finish => Finish,
+			Status => Status);
+		pragma Assert (Out_Last_2 rem CS_In_SE = 0);
+		Out_Last := Out_Item'First + Natural (Out_Last_2 / CS_In_SE) - 1;
+	end Decode;
+	
+	procedure Decode (
 		Object : in Decoder;
 		In_Item : in Ada.Streams.Stream_Element_Array;
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out String_Type;
 		Out_Last : out Natural;
+		Finish : in True_Only;
 		Status : out Substituting_Status_Type)
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
@@ -65,6 +149,7 @@ package body iconv.Generic_Strings is
 			In_Last,
 			Out_Item_2,
 			Out_Last_2,
+			Finish => Finish,
 			Status => Status);
 		pragma Assert (Out_Last_2 rem CS_In_SE = 0);
 		Out_Last := Out_Item'First + Natural (Out_Last_2 / CS_In_SE) - 1;
@@ -89,6 +174,7 @@ package body iconv.Generic_Strings is
 				In_Last,
 				Result (Out_Last + 1 .. Result'Last),
 				Out_Last,
+				Finish => True,
 				Status => Status);
 			case Status is
 				when Finished =>
@@ -123,7 +209,36 @@ package body iconv.Generic_Strings is
 		In_Last : out Natural;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Finish : in Boolean;
 		Status : out Subsequence_Status_Type)
+	is
+		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
+			Character_Type'Size / Ada.Streams.Stream_Element'Size;
+		In_Item_2 : Ada.Streams.Stream_Element_Array (
+			1 ..
+			In_Item'Length * CS_In_SE);
+		for In_Item_2'Address use In_Item'Address;
+		In_Last_2 : Ada.Streams.Stream_Element_Offset;
+	begin
+		Convert (
+			Object,
+			In_Item_2,
+			In_Last_2,
+			Out_Item,
+			Out_Last,
+			Finish => Finish,
+			Status => Status);
+		pragma Assert (In_Last_2 rem CS_In_SE = 0);
+		In_Last := In_Item'First + Natural (In_Last_2 / CS_In_SE) - 1;
+	end Encode;
+	
+	procedure Encode (
+		Object : Encoder;
+		In_Item : String_Type;
+		In_Last : out Natural;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Status : out Continuing_Status_Type)
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
@@ -145,11 +260,41 @@ package body iconv.Generic_Strings is
 	end Encode;
 	
 	procedure Encode (
+		Object : Encoder;
+		In_Item : String_Type;
+		In_Last : out Natural;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Finish : True_Only;
+		Status : out Status_Type)
+	is
+		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
+			Character_Type'Size / Ada.Streams.Stream_Element'Size;
+		In_Item_2 : Ada.Streams.Stream_Element_Array (
+			1 ..
+			In_Item'Length * CS_In_SE);
+		for In_Item_2'Address use In_Item'Address;
+		In_Last_2 : Ada.Streams.Stream_Element_Offset;
+	begin
+		Convert (
+			Object,
+			In_Item_2,
+			In_Last_2,
+			Out_Item,
+			Out_Last,
+			Finish => Finish,
+			Status => Status);
+		pragma Assert (In_Last_2 rem CS_In_SE = 0);
+		In_Last := In_Item'First + Natural (In_Last_2 / CS_In_SE) - 1;
+	end Encode;
+	
+	procedure Encode (
 		Object : in Encoder;
 		In_Item : in String_Type;
 		In_Last : out Natural;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Finish : in True_Only;
 		Status : out Substituting_Status_Type)
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
@@ -166,6 +311,7 @@ package body iconv.Generic_Strings is
 			In_Last_2,
 			Out_Item,
 			Out_Last,
+			Finish => Finish,
 			Status => Status);
 		pragma Assert (In_Last_2 rem CS_In_SE = 0);
 		In_Last := In_Item'First + Natural (In_Last_2 / CS_In_SE) - 1;
@@ -192,6 +338,7 @@ package body iconv.Generic_Strings is
 				In_Last,
 				Result (Out_Last + 1 .. Result'Last),
 				Out_Last,
+				Finish => True,
 				Status => Status);
 			case Status is
 				when Finished =>

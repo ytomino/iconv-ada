@@ -64,6 +64,7 @@ package body iconv.Streams is
 						In_Last,
 						Object.Out_Buffer,
 						Out_Last,
+						Finish => False,
 						Status => Status);
 					Want_Tail := Object.In_Size = 0;
 					case Status is
@@ -140,7 +141,7 @@ package body iconv.Streams is
 					declare
 						In_Last : Ada.Streams.Stream_Element_Offset;
 						Out_Last : Ada.Streams.Stream_Element_Offset;
-						Status : Subsequence_Status_Type;
+						Status : Continuing_Status_Type;
 					begin
 						Convert (
 							Object.Encoding.Writing,
@@ -152,7 +153,7 @@ package body iconv.Streams is
 						In_Index := In_Last + 1;
 						Out_Index := Out_Last + 1;
 						case Status is
-							when Finished | Success =>
+							when Success =>
 								null;
 							when Overflow =>
 								if Out_Last < Out_Buffer'First then
