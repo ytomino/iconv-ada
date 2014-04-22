@@ -22,30 +22,15 @@ package body iconv is
 	procedure Open (
 		Object : in out Converter;
 		To : String;
-		From : String)
-	is
-		C_To : C.char_array (0 .. To'Length);
-		C_From : C.char_array (0 .. From'Length);
-		Dummy : C.void_ptr;
-		pragma Unreferenced (Dummy);
+		From : String) is
 	begin
 		if Handle (Object) /= System.Null_Address then
 			raise Status_Error;
 		end if;
-		Dummy := C.string.memcpy (
-			C.void_ptr (C_To'Address),
-			C.void_const_ptr (To'Address),
-			C_To'Last);
-		C_To (C_To'Last) := C.char'Val (0);
-		Dummy := C.string.memcpy (
-			C.void_ptr (C_From'Address),
-			C.void_const_ptr (From'Address),
-			C_From'Last);
-		C_From (C_From'Last) := C.char'Val (0);
-		Open (
+		Do_Open (
 			Object,
-			To_Code => C_To (0)'Access,
-			From_Code => C_From (0)'Access);
+			To => To,
+			From => From);
 	end Open;
 	
 	function Open (
@@ -54,7 +39,7 @@ package body iconv is
 		return Converter is
 	begin
 		return Result : Converter do
-			Open (
+			Do_Open (
 				Result,
 				To => To,
 				From => From);
@@ -244,15 +229,34 @@ package body iconv is
 	
 	package body Controlled is
 		
-		procedure Open (
-			Object : in out Converter;
-			To_Code, From_Code : not null access constant C.char)
+		procedure Do_Open (
+			Object : out Converter;
+			To : in String;
+			From : in String)
 		is
+			C_To : C.char_array (0 .. To'Length);
+			C_From : C.char_array (0 .. From'Length);
+			Dummy : C.void_ptr;
+			pragma Unreferenced (Dummy);
 			Invalid : constant System.Address := System.Storage_Elements.To_Address (
 				System.Storage_Elements.Integer_Address'Mod (-1));
-			Handle : constant System.Address :=
-				System.Address (C.iconv.iconv_open (To_Code, From_Code));
+			Handle : System.Address;
 		begin
+			Dummy := C.string.memcpy (
+				C.void_ptr (C_To'Address),
+				C.void_const_ptr (To'Address),
+				C_To'Last);
+			C_To (C_To'Last) := C.char'Val (0);
+			Dummy := C.string.memcpy (
+				C.void_ptr (C_From'Address),
+				C.void_const_ptr (From'Address),
+				C_From'Last);
+			C_From (C_From'Last) := C.char'Val (0);
+			-- open
+			Handle := System.Address (
+				C.iconv.iconv_open (
+					C_To (0)'Access,
+					C_From (0)'Access));
 			if Handle = Invalid then
 				raise Name_Error;
 			end if;
@@ -290,7 +294,7 @@ package body iconv is
 			end;
 			-- about "To"
 			Object.Data.Substitute_Length := 0;
-		end Open;
+		end Do_Open;
 		
 		function Handle (Object : Converter) return System.Address is
 		begin

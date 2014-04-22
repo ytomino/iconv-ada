@@ -9,8 +9,8 @@ package body iconv.Generic_Strings is
 		return Decoder is
 	begin
 		return Result : Decoder do
-			Open (
-				Result,
+			Do_Open (
+				Converter (Result),
 				To => To_Encoding,
 				From => From_Encoding);
 		end return;
@@ -92,8 +92,8 @@ package body iconv.Generic_Strings is
 		return Encoder is
 	begin
 		return Result : Encoder do
-			Open (
-				Result,
+			Do_Open (
+				Converter (Result),
 				To => To_Encoding,
 				From => From_Encoding);
 		end return;

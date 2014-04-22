@@ -103,9 +103,10 @@ private
 		
 		type Converter is limited private;
 		
-		procedure Open (
-			Object : in out Converter;
-			To_Code, From_Code : not null access constant C.char);
+		procedure Do_Open (
+			Object : out Converter;
+			To : in String;
+			From : in String);
 		
 		function Handle (Object : Converter) return System.Address;
 		
