@@ -9,13 +9,16 @@ procedure test_nop is
 begin
 	declare
 		C : iconv.Converter;
+		pragma Unmodified (C);
 	begin
 		begin
 			declare
+				In_Last : Ada.Streams.Stream_Element_Offset;
 				Out_Item : Ada.Streams.Stream_Element_Array (0 .. 0);
 				Out_Last : Ada.Streams.Stream_Element_Offset;
+				Status : iconv.Substituting_Status_Type;
 			begin
-				iconv.Convert (C, (0 .. -1 => <>), Out_Item, Out_Last);
+				iconv.Convert (C, (0 .. -1 => <>), In_Last, Out_Item, Out_Last, Status);
 				raise Program_Error; -- Status_Error shold be raised
 			end;
 		exception

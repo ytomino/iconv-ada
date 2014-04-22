@@ -1,6 +1,7 @@
 pragma Ada_2012;
 with Ada.Unchecked_Conversion;
 with System.Storage_Elements;
+with C.errno;
 with C.iconv;
 with C.string;
 with iconv.Inside;
@@ -89,7 +90,7 @@ package body iconv is
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
-		Status : out Error_Status)
+		Status : out Subsequence_Status_Type)
 	is
 		pragma Suppress (All_Checks);
 		-- C.char_ptr will be mapped access C.char / Interfaces.C.chars_ptr,
@@ -123,12 +124,12 @@ package body iconv is
 					errno := C.errno.errno;
 					case errno is
 						when C.errno.E2BIG =>
-							raise Constraint_Error;
+							Status := Overflow;
 						when C.errno.EINVAL
 							-- dirty hack for OSX
 							| -1601902748 | -1603246236 | -1609021596 | -1610246300
 						=>
-							Status := Invalid;
+							Status := Truncated;
 						when C.errno.EILSEQ =>
 							Status := Illegal_Sequence;
 						when others =>
@@ -136,7 +137,10 @@ package body iconv is
 								with "iconv failed (errno =" & C.signed_int'Image (errno) & ")";
 					end case;
 				else
-					Status := Fine;
+					Status := Success;
+					if In_Size = 0 then
+						Status := Finished;
+					end if;
 				end if;
 				In_Last := In_Item'First
 					+ (In_Item'Length - Ada.Streams.Stream_Element_Offset (In_Size))
@@ -151,45 +155,53 @@ package body iconv is
 	procedure Convert (
 		Object : in Converter;
 		In_Item : in Ada.Streams.Stream_Element_Array;
+		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
-		Out_Last : out Ada.Streams.Stream_Element_Offset)
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Status : out Substituting_Status_Type)
 	is
 		NC_Converter : constant not null access constant Non_Controlled_Converter :=
 			Constant_Reference (Object);
-		In_Index : Ada.Streams.Stream_Element_Offset := In_Item'First;
-		Out_Index : Ada.Streams.Stream_Element_Offset := Out_Item'First;
 	begin
+		In_Last := In_Item'First - 1;
+		Out_Last := Out_Item'First - 1;
 		loop
 			declare
-				Status : Error_Status;
-				In_Last : Ada.Streams.Stream_Element_Offset;
+				Subsequence_Status : Subsequence_Status_Type;
 			begin
 				Convert (
 					Object,
-					In_Item (In_Index .. In_Item'Last),
+					In_Item (In_Last + 1 .. In_Item'Last),
 					In_Last,
-					Out_Item (Out_Index .. Out_Item'Last),
+					Out_Item (Out_Last + 1 .. Out_Item'Last),
 					Out_Last,
-					Status);
-				In_Index := In_Last + 1;
-				Out_Index := Out_Last + 1;
-				case Status is
-					when Fine =>
-						null;
-					when Invalid | Illegal_Sequence =>
+					Status => Subsequence_Status);
+				pragma Assert (Subsequence_Status in
+					Subsequence_Status_Type (Status_Type'First) ..
+					Subsequence_Status_Type (Status_Type'Last));
+				case Status_Type (Subsequence_Status) is
+					when Finished =>
+						Status := Finished;
+						return;
+					when Success =>
+						Status := Success;
+						return;
+					when Overflow =>
+						Status := Overflow;
+						return;
+					when Illegal_Sequence =>
 						declare
 							Is_Overflow : Boolean;
 						begin
 							Put_Substitute (
 								Object,
-								Out_Item (Out_Index .. Out_Item'Last),
-								Out_Index,
+								Out_Item (Out_Last + 1 .. Out_Item'Last),
+								Out_Last,
 								Is_Overflow);
 							if Is_Overflow then
 								raise Constraint_Error;
 							end if;
 						end;
-						Out_Index := Out_Index + 1;
 						declare
 							New_Last : Ada.Streams.Stream_Element_Offset :=
 								In_Last + NC_Converter.Min_Size_In_From_Stream_Elements;
@@ -200,10 +212,8 @@ package body iconv is
 								New_Last := In_Item'Last;
 							end if;
 							In_Last := New_Last;
-							In_Index := New_Last + 1;
 						end;
 				end case;
-				exit when In_Index > In_Item'Last;
 			end;
 		end loop;
 	end Convert;

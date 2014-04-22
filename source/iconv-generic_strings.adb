@@ -22,7 +22,7 @@ package body iconv.Generic_Strings is
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out String_Type;
 		Out_Last : out Natural;
-		Status : out Error_Status)
+		Status : out Subsequence_Status_Type)
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
@@ -38,7 +38,7 @@ package body iconv.Generic_Strings is
 			In_Last,
 			Out_Item_2,
 			Out_Last_2,
-			Status);
+			Status => Status);
 		pragma Assert (Out_Last_2 rem CS_In_SE = 0);
 		Out_Last := Out_Item'First + Natural (Out_Last_2 / CS_In_SE) - 1;
 	end Decode;
@@ -46,8 +46,10 @@ package body iconv.Generic_Strings is
 	procedure Decode (
 		Object : in Decoder;
 		In_Item : in Ada.Streams.Stream_Element_Array;
+		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out String_Type;
-		Out_Last : out Natural)
+		Out_Last : out Natural;
+		Status : out Substituting_Status_Type)
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
@@ -60,8 +62,10 @@ package body iconv.Generic_Strings is
 		Convert (
 			Object,
 			In_Item,
+			In_Last,
 			Out_Item_2,
-			Out_Last_2);
+			Out_Last_2,
+			Status => Status);
 		pragma Assert (Out_Last_2 rem CS_In_SE = 0);
 		Out_Last := Out_Item'First + Natural (Out_Last_2 / CS_In_SE) - 1;
 	end Decode;
@@ -71,17 +75,31 @@ package body iconv.Generic_Strings is
 		S : Ada.Streams.Stream_Element_Array)
 		return String_Type
 	is
+		In_Last : Ada.Streams.Stream_Element_Offset := S'First - 1;
 		Result : String_Type (
 			1 ..
 			Max_Length_Of_Single_Character * S'Length);
-		Last : Natural;
+		Out_Last : Natural := 0;
+		Status : Substituting_Status_Type;
 	begin
-		Decode (
-			Object,
-			S,
-			Result,
-			Last);
-		return Result (1 .. Last);
+		loop
+			Decode (
+				Object,
+				S (In_Last + 1 .. S'Last),
+				In_Last,
+				Result (Out_Last + 1 .. Result'Last),
+				Out_Last,
+				Status => Status);
+			case Status is
+				when Finished =>
+					exit;
+				when Success =>
+					null;
+				when Overflow =>
+					raise Constraint_Error;
+			end case;
+		end loop;
+		return Result (Result'First .. Out_Last);
 	end Decode;
 	
 	-- encoder
@@ -105,7 +123,7 @@ package body iconv.Generic_Strings is
 		In_Last : out Natural;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
-		Status : out Error_Status)
+		Status : out Subsequence_Status_Type)
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
@@ -121,7 +139,7 @@ package body iconv.Generic_Strings is
 			In_Last_2,
 			Out_Item,
 			Out_Last,
-			Status);
+			Status => Status);
 		pragma Assert (In_Last_2 rem CS_In_SE = 0);
 		In_Last := In_Item'First + Natural (In_Last_2 / CS_In_SE) - 1;
 	end Encode;
@@ -129,8 +147,10 @@ package body iconv.Generic_Strings is
 	procedure Encode (
 		Object : in Encoder;
 		In_Item : in String_Type;
+		In_Last : out Natural;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
-		Out_Last : out Ada.Streams.Stream_Element_Offset)
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Status : out Substituting_Status_Type)
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
@@ -138,12 +158,17 @@ package body iconv.Generic_Strings is
 			1 ..
 			In_Item'Length * CS_In_SE);
 		for In_Item_2'Address use In_Item'Address;
+		In_Last_2 : Ada.Streams.Stream_Element_Offset;
 	begin
 		Convert (
 			Object,
 			In_Item_2,
+			In_Last_2,
 			Out_Item,
-			Out_Last);
+			Out_Last,
+			Status => Status);
+		pragma Assert (In_Last_2 rem CS_In_SE = 0);
+		In_Last := In_Item'First + Natural (In_Last_2 / CS_In_SE) - 1;
 	end Encode;
 	
 	function Encode (
@@ -153,17 +178,31 @@ package body iconv.Generic_Strings is
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
+		In_Last : Natural := S'First - 1;
 		Result : Ada.Streams.Stream_Element_Array (
 			0 ..
 			CS_In_SE * Max_Length_Of_Single_Character * S'Length - 1);
-		Last : Ada.Streams.Stream_Element_Offset;
+		Out_Last : Ada.Streams.Stream_Element_Offset := -1;
+		Status : Substituting_Status_Type;
 	begin
-		Encode (
-			Object,
-			S,
-			Result,
-			Last);
-		return Result (0 .. Last);
+		loop
+			Encode (
+				Object,
+				S (In_Last + 1 .. S'Last),
+				In_Last,
+				Result (Out_Last + 1 .. Result'Last),
+				Out_Last,
+				Status => Status);
+			case Status is
+				when Finished =>
+					exit;
+				when Success =>
+					null;
+				when Overflow =>
+					raise Constraint_Error;
+			end case;
+		end loop;
+		return Result (Result'First .. Out_Last);
 	end Encode;
 	
 end iconv.Generic_Strings;

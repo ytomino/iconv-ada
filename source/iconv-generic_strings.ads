@@ -21,14 +21,16 @@ package iconv.Generic_Strings is
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out String_Type;
 		Out_Last : out Natural;
-		Status : out Error_Status);
+		Status : out Subsequence_Status_Type);
 	
 	-- decode all character sequence with substitute
 	procedure Decode (
 		Object : in Decoder;
 		In_Item : in Ada.Streams.Stream_Element_Array;
+		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out String_Type;
-		Out_Last : out Natural);
+		Out_Last : out Natural;
+		Status : out Substituting_Status_Type);
 	
 	function Decode (
 		Object : Decoder;
@@ -51,14 +53,16 @@ package iconv.Generic_Strings is
 		In_Last : out Natural;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
-		Status : out Error_Status);
+		Status : out Subsequence_Status_Type);
 	
 	-- encode all character sequence with substitute
 	procedure Encode (
 		Object : in Encoder;
 		In_Item : in String_Type;
+		In_Last : out Natural;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
-		Out_Last : out Ada.Streams.Stream_Element_Offset);
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Status : out Substituting_Status_Type);
 	
 	function Encode (
 		Object : Encoder;

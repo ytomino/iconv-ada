@@ -56,7 +56,7 @@ package body iconv.Streams is
 				declare
 					In_Last : Ada.Streams.Stream_Element_Offset;
 					Out_Last : Ada.Streams.Stream_Element_Offset;
-					Status : Error_Status;
+					Status : Subsequence_Status_Type;
 				begin
 					Convert (
 						Object.Encoding.Reading,
@@ -64,12 +64,16 @@ package body iconv.Streams is
 						In_Last,
 						Object.Out_Buffer,
 						Out_Last,
-						Status);
+						Status => Status);
 					Want_Tail := Object.In_Size = 0;
 					case Status is
-						when Fine =>
+						when Finished | Success =>
 							null;
-						when Invalid =>
+						when Overflow =>
+							if Out_Last < Object.Out_Buffer'First then
+								raise Constraint_Error; -- Out_Buffer is too smaller
+							end if;
+						when Truncated =>
 							Want_Tail := True;
 						when Illegal_Sequence =>
 							declare
@@ -134,9 +138,9 @@ package body iconv.Streams is
 			begin
 				loop
 					declare
-						Status : Error_Status;
 						In_Last : Ada.Streams.Stream_Element_Offset;
 						Out_Last : Ada.Streams.Stream_Element_Offset;
+						Status : Subsequence_Status_Type;
 					begin
 						Convert (
 							Object.Encoding.Writing,
@@ -144,13 +148,17 @@ package body iconv.Streams is
 							In_Last,
 							Out_Buffer (Out_Index .. Out_Buffer'Last),
 							Out_Last,
-							Status);
+							Status => Status);
 						In_Index := In_Last + 1;
 						Out_Index := Out_Last + 1;
 						case Status is
-							when Fine =>
+							when Finished | Success =>
 								null;
-							when Invalid =>
+							when Overflow =>
+								if Out_Last < Out_Buffer'First then
+									raise Constraint_Error; -- Out_Buffer is too smaller
+								end if;
+							when Truncated =>
 								exit; -- wait tail-bytes
 							when Illegal_Sequence =>
 								declare

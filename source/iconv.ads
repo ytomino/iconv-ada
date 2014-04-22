@@ -2,7 +2,6 @@ pragma Ada_2012;
 with Ada.Finalization;
 with Ada.IO_Exceptions;
 with Ada.Streams;
-private with C.errno;
 private with System;
 package iconv is
 	pragma Preelaborate;
@@ -15,15 +14,22 @@ package iconv is
 	
 	-- subsidiary types to converter
 	
-	package Errors is
-		type Error_Status is (Fine, Invalid, Illegal_Sequence);
-	private
-		for Error_Status use (
-			Fine => 0,
-			Invalid => C.errno.EINVAL,
-			Illegal_Sequence => C.errno.EILSEQ);
-	end Errors;
-	type Error_Status is new Errors.Error_Status;
+	type Subsequence_Status_Type is (
+		Finished,
+		Success,
+		Overflow, -- the output buffer is not large enough
+		Illegal_Sequence, -- a input character could not be mapped to the output
+		Truncated); -- the input buffer is broken off at a multi-byte character
+	
+	type Status_Type is
+		new Subsequence_Status_Type range
+			Finished ..
+			Illegal_Sequence;
+	
+	type Substituting_Status_Type is
+		new Status_Type range
+			Finished ..
+			Overflow;
 	
 	-- converter
 	
@@ -56,14 +62,16 @@ package iconv is
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
-		Status : out Error_Status);
+		Status : out Subsequence_Status_Type);
 	
 	-- convert all character sequence with substitute
 	procedure Convert (
 		Object : in Converter;
 		In_Item : in Ada.Streams.Stream_Element_Array;
+		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
-		Out_Last : out Ada.Streams.Stream_Element_Offset);
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		Status : out Substituting_Status_Type);
 	
 	-- two-way
 	
