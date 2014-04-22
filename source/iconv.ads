@@ -123,6 +123,8 @@ package iconv is
 		renames Ada.IO_Exceptions.Name_Error;
 	Status_Error : exception
 		renames Ada.IO_Exceptions.Status_Error;
+	Use_Error : exception
+		renames Ada.IO_Exceptions.Use_Error;
 	
 private
 	

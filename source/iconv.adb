@@ -164,7 +164,7 @@ package body iconv is
 						when C.errno.EILSEQ =>
 							Status := Illegal_Sequence;
 						when others =>
-							raise Program_Error
+							raise Use_Error
 								with "iconv failed (errno =" & C.signed_int'Image (errno) & ")";
 					end case;
 				else
@@ -212,7 +212,7 @@ package body iconv is
 						when C.errno.E2BIG =>
 							Status := Overflow;
 						when others => -- unknown
-							raise Program_Error
+							raise Use_Error
 								with "iconv failed (errno =" & C.signed_int'Image (errno) & ")";
 					end case;
 				else
