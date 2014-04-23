@@ -11,6 +11,11 @@ package body iconv.Streams is
 		Context.Converted_Size := 0;
 	end Initialize;
 	
+	procedure Set_Substitute_To_Reading_Converter (
+		Object : in out Converter;
+		Substitute : Ada.Streams.Stream_Element_Array)
+		renames Set_Substitute; -- iconv.Set_Substitute
+	
 	procedure Read (
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
 		Item : out Ada.Streams.Stream_Element_Array;
@@ -129,6 +134,46 @@ package body iconv.Streams is
 		Context.Size := 0;
 	end Initialize;
 	
+	procedure Set_Substitute_To_Writing_Converter (
+		Object : in out Converter;
+		Substitute : Ada.Streams.Stream_Element_Array);
+	procedure Set_Substitute_To_Writing_Converter (
+		Object : in out Converter;
+		Substitute : Ada.Streams.Stream_Element_Array)
+	is
+		Substitute_Last : Ada.Streams.Stream_Element_Offset :=
+			Substitute'First - 1;
+		S2 : Ada.Streams.Stream_Element_Array (1 .. Max_Substitute_Length);
+		S2_Last : Ada.Streams.Stream_Element_Offset := S2'First - 1;
+	begin
+		-- convert substitute from internal to external
+		loop
+			declare
+				Status : Substituting_Status_Type;
+			begin
+				Convert (
+					Object,
+					Substitute (Substitute_Last + 1 .. Substitute'Last),
+					Substitute_Last,
+					S2 (S2_Last + 1 .. S2'Last),
+					S2_Last,
+					Finish => True,
+					Status => Status);
+				case Status is
+					when Finished =>
+						exit;
+					when Success =>
+						null;
+					when Overflow =>
+						raise Constraint_Error;
+				end case;
+			end;
+		end loop;
+		Set_Substitute (
+			Object,
+			S2 (1 .. S2_Last));
+	end Set_Substitute_To_Writing_Converter;
+	
 	procedure Write (
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
 		Item : Ada.Streams.Stream_Element_Array;
@@ -218,6 +263,7 @@ package body iconv.Streams is
 			Result.Internal := Internal;
 			Result.External := External;
 			Result.Stream := Stream;
+			Result.Substitute_Length := 0; -- default is empty
 			Initialize (Result.Reading_Context);
 			Initialize (Result.Writing_Context);
 		end return;
@@ -227,6 +273,34 @@ package body iconv.Streams is
 	begin
 		return Object.Stream /= null;
 	end Is_Open;
+	
+	function Substitute (Object : Inout_Type)
+		return Ada.Streams.Stream_Element_Array is
+	begin
+		return Object.Substitute (1 .. Object.Substitute_Length);
+	end Substitute;
+	
+	procedure Set_Substitute (
+		Object : in out Inout_Type;
+		Substitute : Ada.Streams.Stream_Element_Array) is
+	begin
+		if Substitute'Length > Object.Substitute'Length then
+			raise Constraint_Error;
+		end if;
+		Object.Substitute_Length := Substitute'Length;
+		Object.Substitute (1 .. Object.Substitute_Length) := Substitute;
+		-- set to converters
+		if Is_Open (Object.Reading_Converter) then
+			Set_Substitute_To_Reading_Converter (
+				Object.Reading_Converter,
+				Substitute);
+		end if;
+		if Is_Open (Object.Writing_Converter) then
+			Set_Substitute_To_Writing_Converter (
+				Object.Writing_Converter,
+				Substitute);
+		end if;
+	end Set_Substitute;
 	
 	function Stream (Object : aliased in out Inout_Type)
 		return not null access Ada.Streams.Root_Stream_Type'Class is
@@ -247,6 +321,11 @@ package body iconv.Streams is
 				Object.Reading_Converter,
 				To => Object.Internal.all,
 				From => Object.External.all);
+			if Object.Substitute_Length >= 0 then
+				Set_Substitute_To_Reading_Converter (
+					Object.Reading_Converter,
+					Object.Substitute (1 .. Object.Substitute_Length));
+			end if;
 		end if;
 		Read (
 			Object.Stream,
@@ -265,6 +344,11 @@ package body iconv.Streams is
 				Object.Writing_Converter,
 				To => Object.External.all,
 				From => Object.Internal.all);
+			if Object.Substitute_Length >= 0 then
+				Set_Substitute_To_Writing_Converter (
+					Object.Writing_Converter,
+					Object.Substitute (1 .. Object.Substitute_Length));
+			end if;
 		end if;
 		Write (
 			Object.Stream,

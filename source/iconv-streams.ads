@@ -16,6 +16,13 @@ package iconv.Streams is
 	function Is_Open (Object : Inout_Type) return Boolean;
 	pragma Inline (Is_Open);
 	
+	-- substitute (encoded as internal)
+	function Substitute (Object : Inout_Type)
+		return Ada.Streams.Stream_Element_Array;
+	procedure Set_Substitute (
+		Object : in out Inout_Type;
+		Substitute : Ada.Streams.Stream_Element_Array);
+	
 	-- stream access
 	function Stream (Object : aliased in out Inout_Type)
 		return not null access Ada.Streams.Root_Stream_Type'Class;
@@ -45,6 +52,11 @@ private
 		Internal : access constant String;
 		External : access constant String;
 		Stream : access Ada.Streams.Root_Stream_Type'Class;
+		-- substitute (encoded as internal)
+		Substitute_Length : Ada.Streams.Stream_Element_Offset;
+		Substitute : Ada.Streams.Stream_Element_Array (
+			1 ..
+			Max_Substitute_Length);
 		-- reading
 		Reading_Converter : Converter;
 		Reading_Context : Reading_Context_Type;
