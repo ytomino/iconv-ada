@@ -1,13 +1,20 @@
+pragma Ada_2012;
 with Ada.Streams;
 package iconv.Streams is
 	pragma Preelaborate;
 	
-	type Stream (<>) is limited new Ada.Streams.Root_Stream_Type with private;
+	-- bidirectional
+	
+	type Inout_Type is limited private;
 	
 	function Create (
 		Target : not null access Ada.Streams.Root_Stream_Type'Class;
 		Encoding : not null access constant iconv.Encoding)
-		return Stream;
+		return Inout_Type;
+	
+	-- stream access
+	function Stream (Object : aliased in out Inout_Type)
+		return not null access Ada.Streams.Root_Stream_Type'Class;
 	
 private
 	
@@ -28,7 +35,9 @@ private
 	end record;
 	pragma Suppress_Initialization (Writing_Context_Type);
 	
-	type Stream is limited new Ada.Streams.Root_Stream_Type with record
+	-- bidirectional
+	
+	type Inout_Type is limited new Ada.Streams.Root_Stream_Type with record
 		Encoding : access constant iconv.Encoding;
 		Stream : access Ada.Streams.Root_Stream_Type'Class;
 		-- reading
@@ -38,11 +47,11 @@ private
 	end record;
 	
 	overriding procedure Read (
-		Object : in out Stream;
+		Object : in out Inout_Type;
 		Item : out Ada.Streams.Stream_Element_Array;
 		Last : out Ada.Streams.Stream_Element_Offset);
 	overriding procedure Write (
-		Object : in out Stream;
+		Object : in out Inout_Type;
 		Item : in Ada.Streams.Stream_Element_Array);
 	
 end iconv.Streams;

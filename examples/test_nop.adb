@@ -37,7 +37,7 @@ begin
 	begin
 		begin
 			declare
-				S : iconv.Streams.Stream := iconv.Streams.Create (
+				S : iconv.Streams.Inout_Type := iconv.Streams.Create (
 					Ada.Text_IO.Text_Streams.Stream (Ada.Text_IO.Standard_Output.all),
 					E'Access);
 				pragma Unreferenced (S);

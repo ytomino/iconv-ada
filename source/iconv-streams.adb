@@ -1,3 +1,4 @@
+pragma Ada_2012;
 package body iconv.Streams is
 	use type Ada.Streams.Stream_Element;
 	use type Ada.Streams.Stream_Element_Offset;
@@ -203,19 +204,19 @@ package body iconv.Streams is
 		end if;
 	end Write;
 	
-	-- implementation
+	-- implementation of bidirectional
 	
 	function Create (
 		Target : not null access Ada.Streams.Root_Stream_Type'Class;
 		Encoding : not null access constant iconv.Encoding)
-		return Stream
+		return Inout_Type
 	is
 		pragma Suppress (Accessibility_Check);
 	begin
 		if not Is_Open (Encoding.all) then
 			raise Status_Error;
 		end if;
-		return Result : Stream do
+		return Result : Inout_Type do
 			Result.Encoding := Encoding;
 			Result.Stream := Target;
 			Initialize (Result.Reading_Context);
@@ -223,8 +224,17 @@ package body iconv.Streams is
 		end return;
 	end Create;
 	
+	function Stream (Object : aliased in out Inout_Type)
+		return not null access Ada.Streams.Root_Stream_Type'Class is
+	begin
+		if Object.Stream = null then
+			raise Status_Error;
+		end if;
+		return Object'Unchecked_Access;
+	end Stream;
+	
 	overriding procedure Read (
-		Object : in out Stream;
+		Object : in out Inout_Type;
 		Item : out Ada.Streams.Stream_Element_Array;
 		Last : out Ada.Streams.Stream_Element_Offset) is
 	begin
@@ -237,7 +247,7 @@ package body iconv.Streams is
 	end Read;
 	
 	overriding procedure Write (
-		Object : in out Stream;
+		Object : in out Inout_Type;
 		Item : in Ada.Streams.Stream_Element_Array) is
 	begin
 		Write (

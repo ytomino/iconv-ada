@@ -9,7 +9,7 @@ procedure stream_w is
 		Ada.Text_IO.Text_Streams.Stream (Ada.Text_IO.Standard_Output.all);
 	Encoding : aliased iconv.Encoding :=
 		iconv.Open ("UTF-8", "ISO-2022-JP-3");
-	iconv_Output : iconv.Streams.Stream :=
+	iconv_Output : aliased iconv.Streams.Inout_Type :=
 		iconv.Streams.Create (Std_Output, Encoding'Access);
 	S : Ada.Streams.Stream_Element_Array (1 .. 1);
 	Last : Ada.Streams.Stream_Element_Count;
@@ -17,6 +17,6 @@ begin
 	loop
 		Ada.Streams.Read (Std_Input.all, S, Last);
 		exit when Last = 0;
-		Ada.Streams.Write (Ada.Streams.Root_Stream_Type'Class (iconv_Output), S);
+		Ada.Streams.Write (iconv.Streams.Stream (iconv_Output).all, S);
 	end loop;
 end stream_w;
