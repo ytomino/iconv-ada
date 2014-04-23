@@ -36,25 +36,31 @@ package iconv.Streams is
 		renames Ada.IO_Exceptions.End_Error;
 	
 private
+	use type Ada.Streams.Stream_Element_Offset;
+	
+	Half_Buffer_Length : constant := 64;
 	
 	subtype Buffer_Type is
-		Ada.Streams.Stream_Element_Array (1 .. Max_Length_Of_Single_Character);
+		Ada.Streams.Stream_Element_Array (0 .. 2 * Half_Buffer_Length - 1);
 	
 	type Reading_Status_Type is (Continuing, Finishing, Ended);
 	pragma Discard_Names (Reading_Status_Type);
 	
 	type Reading_Context_Type is record
 		Buffer : Buffer_Type;
-		Size : Ada.Streams.Stream_Element_Count;
+		First : Ada.Streams.Stream_Element_Offset;
+		Last : Ada.Streams.Stream_Element_Offset;
 		Converted_Buffer : Buffer_Type;
-		Converted_Size : Ada.Streams.Stream_Element_Count;
+		Converted_First : Ada.Streams.Stream_Element_Offset;
+		Converted_Last : Ada.Streams.Stream_Element_Offset;
 		Status : Reading_Status_Type;
 	end record;
 	pragma Suppress_Initialization (Reading_Context_Type);
 	
 	type Writing_Context_Type is record
 		Buffer : Buffer_Type;
-		Size : Ada.Streams.Stream_Element_Count;
+		First : Ada.Streams.Stream_Element_Offset;
+		Last : Ada.Streams.Stream_Element_Offset;
 	end record;
 	pragma Suppress_Initialization (Writing_Context_Type);
 	
