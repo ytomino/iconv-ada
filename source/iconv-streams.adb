@@ -9,6 +9,7 @@ package body iconv.Streams is
 	begin
 		Context.Size := 0;
 		Context.Converted_Size := 0;
+		Context.Status := Continuing;
 	end Initialize;
 	
 	procedure Set_Substitute_To_Reading_Converter (
@@ -29,55 +30,61 @@ package body iconv.Streams is
 		Object : Converter;
 		Context : in out Reading_Context_Type)
 	is
-		Want_Tail : Boolean := Context.Size = 0;
+		Read_Zero : Boolean := False;
 	begin
 		Last := Item'First - 1;
 		while Last < Item'Last loop
-			if Context.Converted_Size = 0 then
-				-- Fill source buffer
-				if Want_Tail then
-					Want_Tail := False;
+			-- filling
+			if Context.Status = Continuing then
+				if Context.Size < Buffer_Type'Length then
 					declare
-						Index : constant Ada.Streams.Stream_Element_Offset :=
-							Context.Size + 1;
+						Old_Context_Last : constant Ada.Streams.Stream_Element_Offset :=
+							Context.Size;
 					begin
 						Ada.Streams.Read (
 							Stream.all,
-							Context.Buffer (Index .. Index),
+							Context.Buffer (Context.Size + 1 .. Buffer_Type'Last),
 							Context.Size);
-						if Context.Size < Index then
-							if Context.Size = 0 then
-								return; -- Input empty
-							else
-								exit;
-							end if;
-						end if;
+						Read_Zero := Old_Context_Last = Context.Size;
+					exception
+						when End_Error =>
+							Context.Status := Finishing;
 					end;
 				end if;
-				-- Convert Single Character
+			end if;
+			-- converting
+			if Context.Status <= Finishing then
+				-- try to convert subsequence
 				declare
 					In_Last : Ada.Streams.Stream_Element_Offset;
-					Out_Last : Ada.Streams.Stream_Element_Offset;
+					Old_Converted_Last : constant Ada.Streams.Stream_Element_Offset :=
+						Context.Converted_Size;
 					Status : Subsequence_Status_Type;
 				begin
 					Convert (
 						Object,
 						Context.Buffer (1 .. Context.Size),
 						In_Last,
-						Context.Converted_Buffer,
-						Out_Last,
-						Finish => False,
+						Context.Converted_Buffer (
+							Context.Converted_Size + 1 ..
+							Buffer_Type'Last),
+						Context.Converted_Size,
+						Finish => Context.Status > Continuing,
 						Status => Status);
-					Want_Tail := Context.Size = 0;
 					case Status is
-						when Finished | Success =>
+						when Finished =>
+							Context.Status := Ended;
+						when Success =>
 							null;
 						when Overflow =>
-							if Out_Last < Context.Converted_Buffer'First then
-								raise Constraint_Error; -- Out_Buffer is too smaller
+							if Context.Converted_Size < Context.Converted_Buffer'First then
+								raise Constraint_Error; -- Converted_Buffer is too smaller
 							end if;
 						when Truncated =>
-							Want_Tail := True;
+							pragma Assert (Context.Status = Continuing);
+							if Context.Converted_Size = Old_Converted_Last then
+								exit; -- wait tail-bytes
+							end if;
 						when Illegal_Sequence =>
 							declare
 								Is_Overflow : Boolean;
@@ -85,9 +92,9 @@ package body iconv.Streams is
 								Put_Substitute (
 									Object,
 									Context.Converted_Buffer (
-										Out_Last + 1 ..
+										Context.Converted_Size + 1 ..
 										Context.Converted_Buffer'Last),
-									Out_Last,
+									Context.Converted_Size,
 									Is_Overflow);
 								if Is_Overflow then
 									exit; -- wait a next try
@@ -98,7 +105,7 @@ package body iconv.Streams is
 								Context.Size,
 								In_Last + Min_Size_In_From_Stream_Elements (Object));
 					end case;
-					Context.Converted_Size := Out_Last;
+					-- drop converted subsequence
 					declare
 						New_In_Size : constant Ada.Streams.Stream_Element_Count :=
 							Context.Size - In_Last;
@@ -109,7 +116,7 @@ package body iconv.Streams is
 					end;
 				end;
 			end if;
-			-- Read from rest of converted buffer
+			-- copy converted elements
 			declare
 				Copy_Size : constant Ada.Streams.Stream_Element_Count :=
 					Ada.Streams.Stream_Element_Count'Min (
@@ -125,7 +132,15 @@ package body iconv.Streams is
 				Last := New_Last;
 				Context.Converted_Size := New_Out_Size;
 			end;
+			exit when (Context.Status = Ended or else Read_Zero)
+				and then Context.Converted_Size = 0;
 		end loop;
+		if Last = Item'First - 1 -- do not use "<" since underflow
+			and then Context.Status = Ended
+			and then Context.Converted_Size = 0
+		then
+			raise End_Error;
+		end if;
 	end Read;
 	
 	procedure Initialize (Context : in out Writing_Context_Type);
@@ -249,6 +264,56 @@ package body iconv.Streams is
 		end if;
 	end Write;
 	
+	procedure Finish (
+		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
+		Object : Converter;
+		Context : in out Writing_Context_Type);
+	procedure Finish (
+		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
+		Object : Converter;
+		Context : in out Writing_Context_Type)
+	is
+		Out_Buffer : Ada.Streams.Stream_Element_Array (0 .. 63);
+		Out_Last : Ada.Streams.Stream_Element_Offset := -1;
+		Status : Finishing_Status_Type;
+	begin
+		if Context.Size > 0 then
+			-- put substitute instead of incomplete sequence in the buffer
+			declare
+				Is_Overflow : Boolean; -- ignore
+			begin
+				Put_Substitute (
+					Object,
+					Out_Buffer (Out_Last + 1 .. Out_Buffer'Last),
+					Out_Last,
+					Is_Overflow);
+			end;
+			Initialize (Context); -- reset indexes
+		end if;
+		-- finish
+		loop
+			Convert (
+				Object,
+				Out_Buffer (Out_Last + 1 .. Out_Buffer'Last),
+				Out_Last,
+				Finish => True,
+				Status => Status);
+			Ada.Streams.Write (
+				Stream.all,
+				Out_Buffer (Out_Buffer'First .. Out_Last));
+			case Status is
+				when Finished =>
+					exit;
+				when Success =>
+					null;
+				when Overflow =>
+					if Out_Last < Out_Buffer'First then
+						raise Constraint_Error; -- Out_Buffer is too smaller
+					end if;
+			end case;
+		end loop;
+	end Finish;
+	
 	-- implementation of bidirectional
 	
 	function Open (
@@ -310,6 +375,19 @@ package body iconv.Streams is
 		end if;
 		return Object'Unchecked_Access;
 	end Stream;
+	
+	procedure Finish (Object : in out Inout_Type) is
+	begin
+		if not Is_Open (Object) then
+			raise Status_Error;
+		end if;
+		if Is_Open (Object.Writing_Converter) then
+			Finish (
+				Object.Stream,
+				Object.Writing_Converter,
+				Object.Writing_Context);
+		end if;
+	end Finish;
 	
 	overriding procedure Read (
 		Object : in out Inout_Type;

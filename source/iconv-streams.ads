@@ -27,16 +27,28 @@ package iconv.Streams is
 	function Stream (Object : aliased in out Inout_Type)
 		return not null access Ada.Streams.Root_Stream_Type'Class;
 	
+	-- finish writing
+	procedure Finish (Object : in out Inout_Type);
+	
+	-- exceptions
+	
+	End_Error : exception
+		renames Ada.IO_Exceptions.End_Error;
+	
 private
 	
 	subtype Buffer_Type is
 		Ada.Streams.Stream_Element_Array (1 .. Max_Length_Of_Single_Character);
+	
+	type Reading_Status_Type is (Continuing, Finishing, Ended);
+	pragma Discard_Names (Reading_Status_Type);
 	
 	type Reading_Context_Type is record
 		Buffer : Buffer_Type;
 		Size : Ada.Streams.Stream_Element_Count;
 		Converted_Buffer : Buffer_Type;
 		Converted_Size : Ada.Streams.Stream_Element_Count;
+		Status : Reading_Status_Type;
 	end record;
 	pragma Suppress_Initialization (Reading_Context_Type);
 	

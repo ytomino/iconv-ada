@@ -22,4 +22,5 @@ begin
 		exit when Last = 0;
 		Ada.Streams.Write (iconv.Streams.Stream (iconv_Output).all, S);
 	end loop;
+	iconv.Streams.Finish (iconv_Output);
 end stream_w;
