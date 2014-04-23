@@ -11,15 +11,30 @@ package iconv.Streams is
 	
 private
 	
+	subtype Buffer_Type is
+		Ada.Streams.Stream_Element_Array (1 .. Max_Length_Of_Single_Character);
+	
+	type Reading_Context_Type is record
+		Buffer : Buffer_Type;
+		Size : Ada.Streams.Stream_Element_Count;
+		Converted_Buffer : Buffer_Type;
+		Converted_Size : Ada.Streams.Stream_Element_Count;
+	end record;
+	pragma Suppress_Initialization (Reading_Context_Type);
+	
+	type Writing_Context_Type is record
+		Buffer : Buffer_Type;
+		Size : Ada.Streams.Stream_Element_Count;
+	end record;
+	pragma Suppress_Initialization (Writing_Context_Type);
+	
 	type Stream is limited new Ada.Streams.Root_Stream_Type with record
-		Target : not null access Ada.Streams.Root_Stream_Type'Class;
-		Encoding : not null access constant iconv.Encoding;
-		In_Buffer : aliased Ada.Streams.Stream_Element_Array
-			(1 .. Max_Length_Of_Single_Character);
-		Out_Buffer : aliased Ada.Streams.Stream_Element_Array
-			(1 .. Max_Length_Of_Single_Character);
-		In_Size : Ada.Streams.Stream_Element_Count;
-		Out_Size : Ada.Streams.Stream_Element_Count;
+		Encoding : access constant iconv.Encoding;
+		Stream : access Ada.Streams.Root_Stream_Type'Class;
+		-- reading
+		Reading_Context : Reading_Context_Type;
+		-- writing
+		Writing_Context : Writing_Context_Type;
 	end record;
 	
 	overriding procedure Read (

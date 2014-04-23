@@ -3,48 +3,44 @@ package body iconv.Streams is
 	use type Ada.Streams.Stream_Element_Offset;
 	use type Ada.Streams.Stream_Element_Array;
 	
-	function Create (
-		Target : not null access Ada.Streams.Root_Stream_Type'Class;
-		Encoding : not null access constant iconv.Encoding)
-		return Stream
-	is
-		pragma Suppress (Accessibility_Check);
+	procedure Initialize (Context : in out Reading_Context_Type);
+	procedure Initialize (Context : in out Reading_Context_Type) is
 	begin
-		if not Is_Open (Encoding.all) then
-			raise Status_Error;
-		end if;
-		return Stream'(Ada.Streams.Root_Stream_Type with
-			Target => Target,
-			Encoding => Encoding,
-			In_Buffer => <>,
-			Out_Buffer => <>,
-			In_Size => 0,
-			Out_Size => 0);
-	end Create;
+		Context.Size := 0;
+		Context.Converted_Size := 0;
+	end Initialize;
 	
-	overriding procedure Read (
-		Object : in out Stream;
+	procedure Read (
+		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
 		Item : out Ada.Streams.Stream_Element_Array;
-		Last : out Ada.Streams.Stream_Element_Offset)
+		Last : out Ada.Streams.Stream_Element_Offset;
+		Object : Converter;
+		Context : in out Reading_Context_Type);
+	procedure Read (
+		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
+		Item : out Ada.Streams.Stream_Element_Array;
+		Last : out Ada.Streams.Stream_Element_Offset;
+		Object : Converter;
+		Context : in out Reading_Context_Type)
 	is
-		Want_Tail : Boolean := Object.In_Size = 0;
+		Want_Tail : Boolean := Context.Size = 0;
 	begin
 		Last := Item'First - 1;
 		while Last < Item'Last loop
-			if Object.Out_Size = 0 then
+			if Context.Converted_Size = 0 then
 				-- Fill source buffer
 				if Want_Tail then
 					Want_Tail := False;
 					declare
 						Index : constant Ada.Streams.Stream_Element_Offset :=
-							Object.In_Size + 1;
+							Context.Size + 1;
 					begin
 						Ada.Streams.Read (
-							Object.Target.all,
-							Object.In_Buffer (Index .. Index),
-							Object.In_Size);
-						if Object.In_Size < Index then
-							if Object.In_Size = 0 then
+							Stream.all,
+							Context.Buffer (Index .. Index),
+							Context.Size);
+						if Context.Size < Index then
+							if Context.Size = 0 then
 								return; -- Input empty
 							else
 								exit;
@@ -59,19 +55,19 @@ package body iconv.Streams is
 					Status : Subsequence_Status_Type;
 				begin
 					Convert (
-						Object.Encoding.Reading,
-						Object.In_Buffer (1 .. Object.In_Size),
+						Object,
+						Context.Buffer (1 .. Context.Size),
 						In_Last,
-						Object.Out_Buffer,
+						Context.Converted_Buffer,
 						Out_Last,
 						Finish => False,
 						Status => Status);
-					Want_Tail := Object.In_Size = 0;
+					Want_Tail := Context.Size = 0;
 					case Status is
 						when Finished | Success =>
 							null;
 						when Overflow =>
-							if Out_Last < Object.Out_Buffer'First then
+							if Out_Last < Context.Converted_Buffer'First then
 								raise Constraint_Error; -- Out_Buffer is too smaller
 							end if;
 						when Truncated =>
@@ -81,8 +77,10 @@ package body iconv.Streams is
 								Is_Overflow : Boolean;
 							begin
 								Put_Substitute (
-									Object.Encoding.Reading,
-									Object.Out_Buffer (Out_Last + 1 .. Object.Out_Buffer'Last),
+									Object,
+									Context.Converted_Buffer (
+										Out_Last + 1 ..
+										Context.Converted_Buffer'Last),
 									Out_Last,
 									Is_Overflow);
 								if Is_Overflow then
@@ -91,17 +89,17 @@ package body iconv.Streams is
 							end;
 							-- skip one element
 							In_Last := Ada.Streams.Stream_Element_Offset'Min (
-								Object.In_Size,
-								In_Last + Min_Size_In_From_Stream_Elements (Object.Encoding.Writing));
+								Context.Size,
+								In_Last + Min_Size_In_From_Stream_Elements (Object));
 					end case;
-					Object.Out_Size := Out_Last;
+					Context.Converted_Size := Out_Last;
 					declare
 						New_In_Size : constant Ada.Streams.Stream_Element_Count :=
-							Object.In_Size - In_Last;
+							Context.Size - In_Last;
 					begin
-						Object.In_Buffer (1 .. New_In_Size) :=
-							Object.In_Buffer (In_Last + 1 .. Object.In_Size);
-						Object.In_Size := New_In_Size;
+						Context.Buffer (1 .. New_In_Size) :=
+							Context.Buffer (In_Last + 1 .. Context.Size);
+						Context.Size := New_In_Size;
 					end;
 				end;
 			end if;
@@ -109,29 +107,42 @@ package body iconv.Streams is
 			declare
 				Copy_Size : constant Ada.Streams.Stream_Element_Count :=
 					Ada.Streams.Stream_Element_Count'Min (
-						Object.Out_Size,
+						Context.Converted_Size,
 						Item'Last - Last);
 				New_Last : constant Ada.Streams.Stream_Element_Offset := Last + Copy_Size;
 				New_Out_Size : constant Ada.Streams.Stream_Element_Count :=
-					Object.Out_Size - Copy_Size;
+					Context.Converted_Size - Copy_Size;
 			begin
-				Item (Last + 1 .. New_Last) := Object.Out_Buffer (1 .. Copy_Size);
-				Object.Out_Buffer (1 .. New_Out_Size) :=
-					Object.Out_Buffer (Copy_Size + 1 .. Object.Out_Size);
+				Item (Last + 1 .. New_Last) := Context.Converted_Buffer (1 .. Copy_Size);
+				Context.Converted_Buffer (1 .. New_Out_Size) :=
+					Context.Converted_Buffer (Copy_Size + 1 .. Context.Converted_Size);
 				Last := New_Last;
-				Object.Out_Size := New_Out_Size;
+				Context.Converted_Size := New_Out_Size;
 			end;
 		end loop;
 	end Read;
 	
-	overriding procedure Write (
-		Object : in out Stream;
-		Item : in Ada.Streams.Stream_Element_Array) is
+	procedure Initialize (Context : in out Writing_Context_Type);
+	procedure Initialize (Context : in out Writing_Context_Type) is
+	begin
+		Context.Size := 0;
+	end Initialize;
+	
+	procedure Write (
+		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
+		Item : Ada.Streams.Stream_Element_Array;
+		Object : Converter;
+		Context : in out Writing_Context_Type);
+	procedure Write (
+		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
+		Item : Ada.Streams.Stream_Element_Array;
+		Object : Converter;
+		Context : in out Writing_Context_Type) is
 	begin
 		if Item'Length > 0 then
 			declare
 				In_Buffer : constant Ada.Streams.Stream_Element_Array :=
-					Object.In_Buffer (1 .. Object.In_Size) & Item;
+					Context.Buffer (1 .. Context.Size) & Item;
 				In_Index : Ada.Streams.Stream_Element_Offset := In_Buffer'First;
 				Out_Buffer : Ada.Streams.Stream_Element_Array
 					(1 .. Max_Length_Of_Single_Character * In_Buffer'Length);
@@ -144,7 +155,7 @@ package body iconv.Streams is
 						Status : Continuing_Status_Type;
 					begin
 						Convert (
-							Object.Encoding.Writing,
+							Object,
 							In_Buffer (In_Index .. In_Buffer'Last),
 							In_Last,
 							Out_Buffer (Out_Index .. Out_Buffer'Last),
@@ -166,7 +177,7 @@ package body iconv.Streams is
 									Is_Overflow : Boolean;
 								begin
 									Put_Substitute (
-										Object.Encoding.Writing,
+										Object,
 										Out_Buffer (Out_Index .. Out_Buffer'Last),
 										Out_Index,
 										Is_Overflow);
@@ -177,19 +188,63 @@ package body iconv.Streams is
 								Out_Index := Out_Index + 1;
 								-- skip one element
 								In_Index := Ada.Streams.Stream_Element_Offset'Min (
-									Object.In_Size,
+									Context.Size,
 									In_Index
-										+ Min_Size_In_From_Stream_Elements (Object.Encoding.Writing));
+										+ Min_Size_In_From_Stream_Elements (Object));
 						end case;
 						exit when In_Index > In_Buffer'Last;
 					end;
 				end loop;
-				Object.In_Size := In_Buffer'Last - In_Index + 1;
-				Object.In_Buffer (1 .. Object.In_Size) :=
+				Context.Size := In_Buffer'Last - In_Index + 1;
+				Context.Buffer (1 .. Context.Size) :=
 					In_Buffer (In_Index .. In_Buffer'Last);
-				Ada.Streams.Write (Object.Target.all, Out_Buffer (1 .. Out_Index - 1));
+				Ada.Streams.Write (Stream.all, Out_Buffer (1 .. Out_Index - 1));
 			end;
 		end if;
+	end Write;
+	
+	-- implementation
+	
+	function Create (
+		Target : not null access Ada.Streams.Root_Stream_Type'Class;
+		Encoding : not null access constant iconv.Encoding)
+		return Stream
+	is
+		pragma Suppress (Accessibility_Check);
+	begin
+		if not Is_Open (Encoding.all) then
+			raise Status_Error;
+		end if;
+		return Result : Stream do
+			Result.Encoding := Encoding;
+			Result.Stream := Target;
+			Initialize (Result.Reading_Context);
+			Initialize (Result.Writing_Context);
+		end return;
+	end Create;
+	
+	overriding procedure Read (
+		Object : in out Stream;
+		Item : out Ada.Streams.Stream_Element_Array;
+		Last : out Ada.Streams.Stream_Element_Offset) is
+	begin
+		Read (
+			Object.Stream,
+			Item,
+			Last,
+			Object.Encoding.Reading,
+			Object.Reading_Context);
+	end Read;
+	
+	overriding procedure Write (
+		Object : in out Stream;
+		Item : in Ada.Streams.Stream_Element_Array) is
+	begin
+		Write (
+			Object.Stream,
+			Item,
+			Object.Encoding.Writing,
+			Object.Writing_Context);
 	end Write;
 	
 end iconv.Streams;
