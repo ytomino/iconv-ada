@@ -355,6 +355,116 @@ package body iconv.Streams is
 		end loop;
 	end Finish;
 	
+	--  implementation of only reading
+	
+	function Open (
+		Decoder : Converter;
+		Stream : not null access Ada.Streams.Root_Stream_Type'Class)
+		return In_Type
+	is
+		pragma Suppress (Accessibility_Check);
+	begin
+		return Result : In_Type do
+			Result.Stream := Stream;
+			Result.Reading_Converter := Decoder'Unrestricted_Access;
+			Initialize (Result.Reading_Context);
+		end return;
+	end Open;
+	
+	function Is_Open (Object : In_Type) return Boolean is
+	begin
+		return Object.Stream /= null;
+	end Is_Open;
+	
+	function Stream (Object : aliased in out In_Type)
+		return not null access Ada.Streams.Root_Stream_Type'Class is
+	begin
+		if not Is_Open (Object) then
+			raise Status_Error;
+		end if;
+		return Object'Unchecked_Access;
+	end Stream;
+	
+	overriding procedure Read (
+		Object : in out In_Type;
+		Item : out Ada.Streams.Stream_Element_Array;
+		Last : out Ada.Streams.Stream_Element_Offset) is
+	begin
+		Read (
+			Object.Stream,
+			Item,
+			Last,
+			Object.Reading_Converter.all,
+			Object.Reading_Context);
+	end Read;
+	
+	overriding procedure Write (
+		Object : in out In_Type;
+		Item : Ada.Streams.Stream_Element_Array) is
+	begin
+		raise Mode_Error;
+	end Write;
+	
+	--  implementation of only writing
+	
+	function Open (
+		Encoder : Converter;
+		Stream : not null access Ada.Streams.Root_Stream_Type'Class)
+		return Out_Type
+	is
+		pragma Suppress (Accessibility_Check);
+	begin
+		return Result : Out_Type do
+			Result.Stream := Stream;
+			Result.Writing_Converter := Encoder'Unrestricted_Access;
+			Initialize (Result.Writing_Context);
+		end return;
+	end Open;
+	
+	function Is_Open (Object : Out_Type) return Boolean is
+	begin
+		return Object.Stream /= null;
+	end Is_Open;
+	
+	function Stream (Object : aliased in out Out_Type)
+		return not null access Ada.Streams.Root_Stream_Type'Class is
+	begin
+		if not Is_Open (Object) then
+			raise Status_Error;
+		end if;
+		return Object'Unchecked_Access;
+	end Stream;
+	
+	procedure Finish (Object : in out Out_Type) is
+	begin
+		if not Is_Open (Object) then
+			raise Status_Error;
+		end if;
+		Finish (
+			Object.Stream,
+			Object.Writing_Converter.all,
+			Object.Writing_Context);
+	end Finish;
+	
+	overriding procedure Read (
+		Object : in out Out_Type;
+		Item : out Ada.Streams.Stream_Element_Array;
+		Last : out Ada.Streams.Stream_Element_Offset) is
+	begin
+		raise Mode_Error;
+	end Read;
+	
+	overriding procedure Write (
+		Object : in out Out_Type;
+		Item : Ada.Streams.Stream_Element_Array) is
+	begin
+		Write (
+			Object.Stream,
+			Item,
+			Object.Writing_Converter.all,
+			Object.Writing_Context);
+	end Write;
+	
 	-- implementation of bidirectional
 	
 	function Open (
