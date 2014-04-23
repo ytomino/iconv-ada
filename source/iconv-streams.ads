@@ -7,10 +7,14 @@ package iconv.Streams is
 	
 	type Inout_Type is limited private;
 	
-	function Create (
-		Target : not null access Ada.Streams.Root_Stream_Type'Class;
-		Encoding : not null access constant iconv.Encoding)
+	-- management
+	function Open (
+		Internal : not null access constant String;
+		External : not null access constant String;
+		Stream : not null access Ada.Streams.Root_Stream_Type'Class)
 		return Inout_Type;
+	function Is_Open (Object : Inout_Type) return Boolean;
+	pragma Inline (Is_Open);
 	
 	-- stream access
 	function Stream (Object : aliased in out Inout_Type)
@@ -38,11 +42,14 @@ private
 	-- bidirectional
 	
 	type Inout_Type is limited new Ada.Streams.Root_Stream_Type with record
-		Encoding : access constant iconv.Encoding;
+		Internal : access constant String;
+		External : access constant String;
 		Stream : access Ada.Streams.Root_Stream_Type'Class;
 		-- reading
+		Reading_Converter : Converter;
 		Reading_Context : Reading_Context_Type;
 		-- writing
+		Writing_Converter : Converter;
 		Writing_Context : Writing_Context_Type;
 	end record;
 	

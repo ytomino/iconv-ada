@@ -206,28 +206,32 @@ package body iconv.Streams is
 	
 	-- implementation of bidirectional
 	
-	function Create (
-		Target : not null access Ada.Streams.Root_Stream_Type'Class;
-		Encoding : not null access constant iconv.Encoding)
+	function Open (
+		Internal : not null access constant String;
+		External : not null access constant String;
+		Stream : not null access Ada.Streams.Root_Stream_Type'Class)
 		return Inout_Type
 	is
 		pragma Suppress (Accessibility_Check);
 	begin
-		if not Is_Open (Encoding.all) then
-			raise Status_Error;
-		end if;
 		return Result : Inout_Type do
-			Result.Encoding := Encoding;
-			Result.Stream := Target;
+			Result.Internal := Internal;
+			Result.External := External;
+			Result.Stream := Stream;
 			Initialize (Result.Reading_Context);
 			Initialize (Result.Writing_Context);
 		end return;
-	end Create;
+	end Open;
+	
+	function Is_Open (Object : Inout_Type) return Boolean is
+	begin
+		return Object.Stream /= null;
+	end Is_Open;
 	
 	function Stream (Object : aliased in out Inout_Type)
 		return not null access Ada.Streams.Root_Stream_Type'Class is
 	begin
-		if Object.Stream = null then
+		if not Is_Open (Object) then
 			raise Status_Error;
 		end if;
 		return Object'Unchecked_Access;
@@ -238,11 +242,17 @@ package body iconv.Streams is
 		Item : out Ada.Streams.Stream_Element_Array;
 		Last : out Ada.Streams.Stream_Element_Offset) is
 	begin
+		if not Is_Open (Object.Reading_Converter) then
+			Open (
+				Object.Reading_Converter,
+				To => Object.Internal.all,
+				From => Object.External.all);
+		end if;
 		Read (
 			Object.Stream,
 			Item,
 			Last,
-			Object.Encoding.Reading,
+			Object.Reading_Converter,
 			Object.Reading_Context);
 	end Read;
 	
@@ -250,10 +260,16 @@ package body iconv.Streams is
 		Object : in out Inout_Type;
 		Item : in Ada.Streams.Stream_Element_Array) is
 	begin
+		if not Is_Open (Object.Writing_Converter) then
+			Open (
+				Object.Writing_Converter,
+				To => Object.External.all,
+				From => Object.Internal.all);
+		end if;
 		Write (
 			Object.Stream,
 			Item,
-			Object.Encoding.Writing,
+			Object.Writing_Converter,
 			Object.Writing_Context);
 	end Write;
 	

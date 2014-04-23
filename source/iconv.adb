@@ -362,25 +362,6 @@ package body iconv is
 		end loop;
 	end Convert;
 	
-	function Open (Encoded, Decoded : String) return Encoding is
-	begin
-		return Result : Encoding do
-			Open (
-				Result.Writing,
-				To => Encoded,
-				From => Decoded);
-			Open (
-				Result.Reading,
-				To => Decoded,
-				From => Encoded);
-		end return;
-	end Open;
-	
-	function Is_Open (Object : Encoding) return Boolean is
-	begin
-		return Is_Open (Object.Reading);
-	end Is_Open;
-	
 	package body Controlled is
 		
 		procedure Do_Open (

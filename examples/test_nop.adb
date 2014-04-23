@@ -1,7 +1,6 @@
 -- test for uninitialized objects
 with Ada.Streams;
 with Ada.Text_IO;
-with Ada.Text_IO.Text_Streams;
 with iconv;
 with iconv.Streams;
 procedure test_nop is
@@ -32,16 +31,14 @@ begin
 			when iconv.Status_Error => null;
 		end;
 	end;
-	declare
-		E : aliased iconv.Encoding;
 	begin
 		begin
 			declare
-				S : iconv.Streams.Inout_Type := iconv.Streams.Create (
-					Ada.Text_IO.Text_Streams.Stream (Ada.Text_IO.Standard_Output.all),
-					E'Access);
-				pragma Unreferenced (S);
+				S : aliased iconv.Streams.Inout_Type;
+				R : access Ada.Streams.Root_Stream_Type'Class;
+				pragma Unreferenced (R);
 			begin
+				R := iconv.Streams.Stream (S);
 				raise Program_Error; -- Status_Error shold be raised
 			end;
 		exception

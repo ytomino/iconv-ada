@@ -7,10 +7,13 @@ procedure stream_w is
 		Ada.Text_IO.Text_Streams.Stream (Ada.Text_IO.Standard_Input.all);
 	Std_Output : constant Ada.Text_IO.Text_Streams.Stream_Access :=
 		Ada.Text_IO.Text_Streams.Stream (Ada.Text_IO.Standard_Output.all);
-	Encoding : aliased iconv.Encoding :=
-		iconv.Open ("UTF-8", "ISO-2022-JP-3");
+	Internal : aliased constant String := "ISO-2022-JP-3";
+	External : aliased constant String := "UTF-8";
 	iconv_Output : aliased iconv.Streams.Inout_Type :=
-		iconv.Streams.Create (Std_Output, Encoding'Access);
+		iconv.Streams.Open (
+			Internal => Internal'Access,
+			External => External'Access,
+			Stream => Std_Output);
 	S : Ada.Streams.Stream_Element_Array (1 .. 1);
 	Last : Ada.Streams.Stream_Element_Count;
 begin

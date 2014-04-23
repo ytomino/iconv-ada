@@ -110,13 +110,6 @@ package iconv is
 		Finish : in True_Only;
 		Status : out Substituting_Status_Type);
 	
-	-- two-way
-	
-	type Encoding is limited private;
-	
-	function Open (Encoded, Decoded : String) return Encoding;
-	function Is_Open (Object : Encoding) return Boolean;
-	
 	-- exceptions
 	
 	Name_Error : exception
@@ -187,10 +180,5 @@ private
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
 		Is_Overflow : out Boolean);
-	
-	type Encoding is limited record
-		Writing : Converter;
-		Reading : Converter;
-	end record;
 	
 end iconv;
