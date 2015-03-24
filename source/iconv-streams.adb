@@ -355,7 +355,7 @@ package body iconv.Streams is
 		end loop;
 	end Finish;
 	
-	--  implementation of only reading
+	-- implementation of only reading
 	
 	function Open (
 		Decoder : Converter;
@@ -405,7 +405,7 @@ package body iconv.Streams is
 		raise Mode_Error;
 	end Write;
 	
-	--  implementation of only writing
+	-- implementation of only writing
 	
 	function Open (
 		Encoder : Converter;

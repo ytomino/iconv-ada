@@ -3,39 +3,41 @@ with Ada.Streams;
 package iconv.Streams is
 	pragma Preelaborate;
 	
-	--  only reading
+	-- only reading
 	
 	type In_Type is limited private;
 	
-	--  management
+	-- management
 	function Open (
 		Decoder : Converter; -- neither access nor aliased for derived types
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class)
 		return In_Type;
 	function Is_Open (Object : In_Type) return Boolean;
+	
 	pragma Inline (Is_Open);
 	
-	--  stream access
+	-- stream access
 	function Stream (Object : aliased in out In_Type)
 		return not null access Ada.Streams.Root_Stream_Type'Class;
 	
-	--  only writing
+	-- only writing
 	
 	type Out_Type is limited private;
 	
-	--  management
+	-- management
 	function Open (
 		Encoder : Converter; -- same as above
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class)
 		return Out_Type;
 	function Is_Open (Object : Out_Type) return Boolean;
+	
 	pragma Inline (Is_Open);
 	
-	--  stream access
+	-- stream access
 	function Stream (Object : aliased in out Out_Type)
 		return not null access Ada.Streams.Root_Stream_Type'Class;
 	
-	--  finish writing
+	-- finish writing
 	procedure Finish (Object : in out Out_Type);
 	
 	-- bidirectional
@@ -49,6 +51,7 @@ package iconv.Streams is
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class)
 		return Inout_Type;
 	function Is_Open (Object : Inout_Type) return Boolean;
+	
 	pragma Inline (Is_Open);
 	
 	-- substitute (encoded as internal)
@@ -101,7 +104,7 @@ private
 	end record;
 	pragma Suppress_Initialization (Writing_Context_Type);
 	
-	--  only reading
+	-- only reading
 	
 	type In_Type is limited new Ada.Streams.Root_Stream_Type with record
 		Stream : access Ada.Streams.Root_Stream_Type'Class;
@@ -117,7 +120,7 @@ private
 		Object : in out In_Type;
 		Item : Ada.Streams.Stream_Element_Array);
 	
-	--  only writing
+	-- only writing
 	
 	type Out_Type is limited new Ada.Streams.Root_Stream_Type with record
 		Stream : access Ada.Streams.Root_Stream_Type'Class;
