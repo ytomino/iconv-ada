@@ -25,8 +25,8 @@ package body iconv is
 	
 	procedure Open (
 		Object : in out Converter;
-		To : String;
-		From : String)
+		To : in String;
+		From : in String)
 	is
 		pragma Check (Dynamic_Predicate,
 			not Is_Open (Object) or else raise Status_Error);

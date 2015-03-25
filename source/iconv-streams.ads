@@ -78,7 +78,7 @@ package iconv.Streams is
 		return Ada.Streams.Stream_Element_Array;
 	procedure Set_Substitute (
 		Object : in out Inout_Type; -- Open_Inout_Type
-		Substitute : Ada.Streams.Stream_Element_Array);
+		Substitute : in Ada.Streams.Stream_Element_Array);
 	
 	-- stream access
 	function Stream (
@@ -139,7 +139,7 @@ private
 		Last : out Ada.Streams.Stream_Element_Offset);
 	overriding procedure Write (
 		Object : in out In_Type;
-		Item : Ada.Streams.Stream_Element_Array);
+		Item : in Ada.Streams.Stream_Element_Array);
 	
 	-- only writing
 	
@@ -155,7 +155,7 @@ private
 		Last : out Ada.Streams.Stream_Element_Offset);
 	overriding procedure Write (
 		Object : in out Out_Type;
-		Item : Ada.Streams.Stream_Element_Array);
+		Item : in Ada.Streams.Stream_Element_Array);
 	
 	-- bidirectional
 	

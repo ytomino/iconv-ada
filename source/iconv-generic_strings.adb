@@ -53,8 +53,8 @@ package body iconv.Generic_Strings is
 	end Decode;
 	
 	procedure Decode (
-		Object : Decoder;
-		In_Item : Ada.Streams.Stream_Element_Array;
+		Object : in Decoder;
+		In_Item : in Ada.Streams.Stream_Element_Array;
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out String_Type;
 		Out_Last : out Natural;
@@ -80,10 +80,10 @@ package body iconv.Generic_Strings is
 	end Decode;
 	
 	procedure Decode (
-		Object : Decoder;
+		Object : in Decoder;
 		Out_Item : out String_Type;
 		Out_Last : out Natural;
-		Finish : True_Only;
+		Finish : in True_Only;
 		Status : out Finishing_Status_Type)
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
@@ -105,12 +105,12 @@ package body iconv.Generic_Strings is
 	end Decode;
 	
 	procedure Decode (
-		Object : Decoder;
-		In_Item : Ada.Streams.Stream_Element_Array;
+		Object : in Decoder;
+		In_Item : in Ada.Streams.Stream_Element_Array;
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out String_Type;
 		Out_Last : out Natural;
-		Finish : True_Only;
+		Finish : in True_Only;
 		Status : out Status_Type)
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
@@ -240,8 +240,8 @@ package body iconv.Generic_Strings is
 	end Encode;
 	
 	procedure Encode (
-		Object : Encoder;
-		In_Item : String_Type;
+		Object : in Encoder;
+		In_Item : in String_Type;
 		In_Last : out Natural;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
@@ -267,12 +267,12 @@ package body iconv.Generic_Strings is
 	end Encode;
 	
 	procedure Encode (
-		Object : Encoder;
-		In_Item : String_Type;
+		Object : in Encoder;
+		In_Item : in String_Type;
 		In_Last : out Natural;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
-		Finish : True_Only;
+		Finish : in True_Only;
 		Status : out Status_Type)
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=

@@ -25,24 +25,24 @@ package iconv.Generic_Strings is
 		Status : out Subsequence_Status_Type);
 	
 	procedure Decode (
-		Object : Decoder;
-		In_Item : Ada.Streams.Stream_Element_Array;
+		Object : in Decoder;
+		In_Item : in Ada.Streams.Stream_Element_Array;
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out String_Type;
 		Out_Last : out Natural;
 		Status : out Continuing_Status_Type);
 	
 	procedure Decode (
-		Object : Decoder;
+		Object : in Decoder;
 		Out_Item : out String_Type;
 		Out_Last : out Natural;
-		Finish : True_Only;
+		Finish : in True_Only;
 		Status : out Finishing_Status_Type);
 	
 	-- decode all character sequence
 	procedure Decode (
-		Object : Decoder;
-		In_Item : Ada.Streams.Stream_Element_Array;
+		Object : in Decoder;
+		In_Item : in Ada.Streams.Stream_Element_Array;
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out String_Type;
 		Out_Last : out Natural;
@@ -84,25 +84,25 @@ package iconv.Generic_Strings is
 		Status : out Subsequence_Status_Type);
 	
 	procedure Encode (
-		Object : Encoder;
-		In_Item : String_Type;
+		Object : in Encoder;
+		In_Item : in String_Type;
 		In_Last : out Natural;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
 		Status : out Continuing_Status_Type);
 	
 	procedure Encode (
-		Object : Encoder;
+		Object : in Encoder;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
-		Finish : True_Only;
+		Finish : in True_Only;
 		Status : out Finishing_Status_Type)
 		renames Convert; -- inherited
 	
 	-- encode all character sequence
 	procedure Encode (
-		Object : Encoder;
-		In_Item : String_Type;
+		Object : in Encoder;
+		In_Item : in String_Type;
 		In_Last : out Natural;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;

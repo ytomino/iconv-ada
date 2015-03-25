@@ -37,20 +37,20 @@ package body iconv.Streams is
 	
 	procedure Set_Substitute_To_Reading_Converter (
 		Object : in out Converter;
-		Substitute : Ada.Streams.Stream_Element_Array)
+		Substitute : in Ada.Streams.Stream_Element_Array)
 		renames Set_Substitute; -- iconv.Set_Substitute
 	
 	procedure Read (
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
 		Item : out Ada.Streams.Stream_Element_Array;
 		Last : out Ada.Streams.Stream_Element_Offset;
-		Object : Converter;
+		Object : in Converter;
 		Context : in out Reading_Context_Type);
 	procedure Read (
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
 		Item : out Ada.Streams.Stream_Element_Array;
 		Last : out Ada.Streams.Stream_Element_Offset;
-		Object : Converter;
+		Object : in Converter;
 		Context : in out Reading_Context_Type)
 	is
 		Read_Zero : Boolean := False;
@@ -175,10 +175,10 @@ package body iconv.Streams is
 	
 	procedure Set_Substitute_To_Writing_Converter (
 		Object : in out Converter;
-		Substitute : Ada.Streams.Stream_Element_Array);
+		Substitute : in Ada.Streams.Stream_Element_Array);
 	procedure Set_Substitute_To_Writing_Converter (
 		Object : in out Converter;
-		Substitute : Ada.Streams.Stream_Element_Array)
+		Substitute : in Ada.Streams.Stream_Element_Array)
 	is
 		Substitute_Last : Ada.Streams.Stream_Element_Offset :=
 			Substitute'First - 1;
@@ -215,13 +215,13 @@ package body iconv.Streams is
 	
 	procedure Write (
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
-		Item : Ada.Streams.Stream_Element_Array;
-		Object : Converter;
+		Item : in Ada.Streams.Stream_Element_Array;
+		Object : in Converter;
 		Context : in out Writing_Context_Type);
 	procedure Write (
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
-		Item : Ada.Streams.Stream_Element_Array;
-		Object : Converter;
+		Item : in Ada.Streams.Stream_Element_Array;
+		Object : in Converter;
 		Context : in out Writing_Context_Type)
 	is
 		Item_Last : Ada.Streams.Stream_Element_Offset := Item'First - 1;
@@ -307,11 +307,11 @@ package body iconv.Streams is
 	
 	procedure Finish (
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
-		Object : Converter;
+		Object : in Converter;
 		Context : in out Writing_Context_Type);
 	procedure Finish (
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class;
-		Object : Converter;
+		Object : in Converter;
 		Context : in out Writing_Context_Type)
 	is
 		Out_Buffer : Ada.Streams.Stream_Element_Array (0 .. 63);
@@ -401,7 +401,7 @@ package body iconv.Streams is
 	
 	overriding procedure Write (
 		Object : in out In_Type;
-		Item : Ada.Streams.Stream_Element_Array)
+		Item : in Ada.Streams.Stream_Element_Array)
 	is
 		pragma Check (Dynamic_Predicate, Boolean'(raise Mode_Error));
 	begin
@@ -461,7 +461,7 @@ package body iconv.Streams is
 	
 	overriding procedure Write (
 		Object : in out Out_Type;
-		Item : Ada.Streams.Stream_Element_Array) is
+		Item : in Ada.Streams.Stream_Element_Array) is
 	begin
 		Write (
 			Object.Stream,
@@ -507,7 +507,7 @@ package body iconv.Streams is
 	
 	procedure Set_Substitute (
 		Object : in out Inout_Type;
-		Substitute : Ada.Streams.Stream_Element_Array)
+		Substitute : in Ada.Streams.Stream_Element_Array)
 	is
 		pragma Check (Dynamic_Predicate,
 			Is_Open (Object) or else raise Status_Error);
