@@ -1,5 +1,5 @@
 pragma Ada_2012;
-with Ada.Unchecked_Conversion;
+with System.Address_To_Access_Conversions;
 with System.Storage_Elements;
 with C.errno;
 with C.iconv;
@@ -11,6 +11,9 @@ package body iconv is
 	use type C.signed_int;
 	use type C.size_t;
 	use type C.unsigned_int;
+	
+	package char_ptr_Conv is
+		new System.Address_To_Access_Conversions (C.char);
 	
 	-- implementation
 	
@@ -134,19 +137,14 @@ package body iconv is
 		pragma Check (Dynamic_Predicate,
 			Is_Open (Object) or else raise Status_Error);
 		pragma Suppress (All_Checks);
-		-- C.char_ptr will be mapped access C.char / Interfaces.C.chars_ptr,
-		-- There is no shared convert way from System.Address (access Character)
-		-- to these two types, except Unchecked_Conversion.
-		function To_Pointer is
-			new Ada.Unchecked_Conversion (System.Address, C.char_ptr);
-		function To_Pointer is
-			new Ada.Unchecked_Conversion (System.Address, C.char_const_ptr);
 		Handle : constant System.Address := iconv.Handle (Object);
 		In_Pointer : aliased C.char_const_ptr :=
-			To_Pointer (In_Item (In_Item'First)'Address);
+			C.char_const_ptr (
+				char_ptr_Conv.To_Pointer (In_Item (In_Item'First)'Address));
 		In_Size : aliased C.size_t := In_Item'Length;
 		Out_Pointer : aliased C.char_ptr :=
-			To_Pointer (Out_Item (Out_Item'First)'Address);
+			C.char_ptr (
+				char_ptr_Conv.To_Pointer (Out_Item (Out_Item'First)'Address));
 		Out_Size : aliased C.size_t := Out_Item'Length;
 		errno : C.signed_int;
 	begin
@@ -193,10 +191,9 @@ package body iconv is
 		pragma Unreferenced (Finish);
 		pragma Check (Dynamic_Predicate,
 			Is_Open (Object) or else raise Status_Error);
-		function To_Pointer is
-			new Ada.Unchecked_Conversion (System.Address, C.char_ptr);
 		Handle : constant System.Address := iconv.Handle (Object);
-		Out_Pointer : aliased C.char_ptr := To_Pointer (Out_Item'Address);
+		Out_Pointer : aliased C.char_ptr :=
+			C.char_ptr (char_ptr_Conv.To_Pointer (Out_Item'Address));
 		Out_Size : aliased C.size_t := Out_Item'Length;
 		errno : C.signed_int;
 	begin
