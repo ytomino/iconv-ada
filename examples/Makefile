@@ -8,14 +8,21 @@ VERSION=$(shell gcc -dumpversion)
 BUILDDIR=$(TARGET).build
 
 ifeq ($(TARGET),$(HOST))
-GNATMAKE=gnatmake
-GCC=$(dir $(shell which $(GNATMAKE)))gcc
+GNATPREFIX=
+GCC=
 BINLN=bin
 else
-GNATMAKE=$(TARGET)-gnatmake
+GNATPREFIX=$(TARGET)-
 GCC=$(TARGET)-gcc
 BINLN=
 endif
+
+GFLAGS=
+CFLAGS=-ggdb -pipe -gnatef -gnata -gnatwa -gnatyy-3chbs
+MFLAGS=-D $(BUILDDIR)
+BFLAGS=-E
+LFLAGS=-ggdb
+HFLAGS=
 
 ifneq ($(findstring linux,$(TARGET)),)
 ICONVTYPE=lfs
@@ -28,22 +35,29 @@ DRAKE_RTSDIR=$(DRAKE_RTSROOT)/$(TARGET)/$(VERSION)
 endif
 ifneq ($(DRAKE_RTSDIR),)
 IMPORTDIR=
-MFLAGS=--RTS=$(abspath $(DRAKE_RTSDIR))
+GFLAGS+=--RTS=$(abspath $(DRAKE_RTSDIR))
 else
 IMPORTDIR=$(BUILDDIR)/import
-MFLAGS=-I$(abspath $(IMPORTDIR))
+MFLAGS+=-I$(IMPORTDIR)
+endif
+
+ifneq ($(GCC),)
+GFLAGS+=$(filter -m32 -m64,$(GCC))
+MFLAGS+=--GCC="$(GCC)"
+LFLAGS+=--GCC="$(GCC)"
+HFLAGS+=-gcc="$(GCC)"
 endif
 
 EXAMPLES=$(basename $(filter-out b~%,$(wildcard *.adb)))
 
-CFLAGS=-gnata -gnatwa -gnatyy-3chbs
-
 .PHONY: all clean $(EXAMPLES)
 
-all: $(BUILDDIR) $(EXAMPLES) $(BINLN)
+all: $(EXAMPLES)
 
-$(BUILDDIR)/%: %.adb $(IMPORTDIR) $(wildcard $(SOURCEDIR)/*)
-	cd $(BUILDDIR) && $(GNATMAKE) -g $(MFLAGS) -I../$(SOURCEDIR) -I../$(SOURCEDIR)/$(ICONVTYPE) $(CFLAGS) ../$< -largs $(LFLAGS)
+$(BUILDDIR)/%: %.adb $(BUILDDIR) $(IMPORTDIR) $(wildcard $(SOURCEDIR)/*)
+	$(GNATPREFIX)gnatmake -c -I$(SOURCEDIR) -I$(SOURCEDIR)/$(ICONVTYPE) $< $(GFLAGS) $(MFLAGS) -cargs $(CFLAGS)
+	cd $(BUILDDIR) && $(GNATPREFIX)gnatmake -b $(basename $(notdir $<)).ali $(GFLAGS) -bargs $(BFLAGS)
+	cd $(BUILDDIR) && $(GNATPREFIX)gnatlink -o ../$@ $(basename $(notdir $<)).ali $(GFLAGS) $(LFLAGS)
 
 $(BUILDDIR):
 	mkdir $(BUILDDIR)
@@ -51,11 +65,12 @@ $(BUILDDIR):
 $(BINLN): $(BUILDDIR)
 	ln -s $(BUILDDIR) $(BINLN)
 
-$(EXAMPLES): %: $(BUILDDIR)/%
+$(EXAMPLES): %: $(BUILDDIR)/% $(BINLN)
 
 ifneq ($(IMPORTDIR),)
 $(IMPORTDIR): $(SOURCEDIR)/import.h
-	headmaster --to ada -gcc=$(GCC) $(HFLAGS) -p -D $(IMPORTDIR) $+
+	headmaster --to ada $(HFLAGS) -p -D $@ $+
+	touch $@
 endif
 
 clean:
