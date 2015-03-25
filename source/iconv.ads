@@ -10,7 +10,11 @@ package iconv is
 	
 	function Version return String;
 	
+	pragma Inline (Version); -- renamed
+	
 	procedure Iterate (Process : not null access procedure (Name : in String));
+	
+	pragma Inline (Iterate); -- renamed
 	
 	-- subsidiary types to converter
 	
