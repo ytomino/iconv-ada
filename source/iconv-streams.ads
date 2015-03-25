@@ -14,7 +14,7 @@ package iconv.Streams is
 	
 	-- management
 	function Open (
-		Decoder : Converter; -- neither access nor aliased for derived types
+		Decoder : in out Converter; -- neither access nor aliased for derived types
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class)
 		return In_Type;
 	function Is_Open (Object : In_Type) return Boolean;
@@ -37,7 +37,7 @@ package iconv.Streams is
 	
 	-- management
 	function Open (
-		Encoder : Converter; -- same as above
+		Encoder : in out Converter; -- same as above
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class)
 		return Out_Type;
 	function Is_Open (Object : Out_Type) return Boolean;

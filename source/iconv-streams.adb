@@ -358,7 +358,7 @@ package body iconv.Streams is
 	-- implementation of only reading
 	
 	function Open (
-		Decoder : Converter;
+		Decoder : in out Converter;
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class)
 		return In_Type
 	is
@@ -411,7 +411,7 @@ package body iconv.Streams is
 	-- implementation of only writing
 	
 	function Open (
-		Encoder : Converter;
+		Encoder : in out Converter;
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class)
 		return Out_Type
 	is
