@@ -45,6 +45,11 @@ package iconv is
 	
 	type Converter is limited private;
 	
+--	subtype Open_Converter is Converter
+--		with
+--			Dynamic_Predicate => Is_Open (Open_Converter),
+--			Predicate_Failure => raise Status_Error;
+	
 	procedure Open (
 		Object : in out Converter;
 		To : in String;
@@ -55,19 +60,21 @@ package iconv is
 		return Converter;
 	function Is_Open (Object : Converter) return Boolean;
 	
-	function Min_Size_In_From_Stream_Elements (Object : Converter)
+	function Min_Size_In_From_Stream_Elements (
+		Object : Converter) -- Open_Converter
 		return Ada.Streams.Stream_Element_Offset;
 	
-	function Substitute (Object : Converter)
+	function Substitute (
+		Object : Converter) -- Open_Converter
 		return Ada.Streams.Stream_Element_Array;
 	
 	procedure Set_Substitute (
-		Object : in out Converter;
+		Object : in out Converter; -- Open_Converter
 		Substitute : in Ada.Streams.Stream_Element_Array);
 	
 	-- convert subsequence
 	procedure Convert (
-		Object : in Converter;
+		Object : in Converter; -- Open_Converter
 		In_Item : in Ada.Streams.Stream_Element_Array;
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
@@ -76,7 +83,7 @@ package iconv is
 		Status : out Subsequence_Status_Type);
 	
 	procedure Convert (
-		Object : in Converter;
+		Object : in Converter; -- Open_Converter
 		In_Item : in Ada.Streams.Stream_Element_Array;
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
@@ -84,7 +91,7 @@ package iconv is
 		Status : out Continuing_Status_Type);
 	
 	procedure Convert (
-		Object : in Converter;
+		Object : in Converter; -- Open_Converter
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
 		Finish : in True_Only;
@@ -92,7 +99,7 @@ package iconv is
 	
 	-- convert all character sequence
 	procedure Convert (
-		Object : in Converter;
+		Object : in Converter; -- Open_Converter
 		In_Item : in Ada.Streams.Stream_Element_Array;
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out Ada.Streams.Stream_Element_Array;
@@ -102,7 +109,7 @@ package iconv is
 	
 	-- convert all character sequence with substitute
 	procedure Convert (
-		Object : in Converter;
+		Object : in Converter; -- Open_Converter
 		In_Item : in Ada.Streams.Stream_Element_Array;
 		In_Last : out Ada.Streams.Stream_Element_Offset;
 		Out_Item : out Ada.Streams.Stream_Element_Array;

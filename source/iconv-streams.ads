@@ -7,6 +7,11 @@ package iconv.Streams is
 	
 	type In_Type is limited private;
 	
+--	subtype Open_In_Type is In_Type
+--		with
+--			Dynamic_Predicate => Is_Open (Open_In_Type),
+--			Predicate_Failure => raise Status_Error;
+	
 	-- management
 	function Open (
 		Decoder : Converter; -- neither access nor aliased for derived types
@@ -17,12 +22,18 @@ package iconv.Streams is
 	pragma Inline (Is_Open);
 	
 	-- stream access
-	function Stream (Object : aliased in out In_Type)
+	function Stream (
+		Object : aliased in out In_Type) -- Open_In_Type
 		return not null access Ada.Streams.Root_Stream_Type'Class;
 	
 	-- only writing
 	
 	type Out_Type is limited private;
+	
+--	subtype Open_Out_Type is In_Type
+--		with
+--			Dynamic_Predicate => Is_Open (Open_Out_Type),
+--			Predicate_Failure => raise Status_Error;
 	
 	-- management
 	function Open (
@@ -34,15 +45,22 @@ package iconv.Streams is
 	pragma Inline (Is_Open);
 	
 	-- stream access
-	function Stream (Object : aliased in out Out_Type)
+	function Stream (
+		Object : aliased in out Out_Type) -- Open_Out_Type
 		return not null access Ada.Streams.Root_Stream_Type'Class;
 	
 	-- finish writing
-	procedure Finish (Object : in out Out_Type);
+	procedure Finish (
+		Object : in out Out_Type); -- Open_Out_Type
 	
 	-- bidirectional
 	
 	type Inout_Type is limited private;
+	
+--	subtype Open_Inout_Type is In_Type
+--		with
+--			Dynamic_Predicate => Is_Open (Open_Inout_Type),
+--			Predicate_Failure => raise Status_Error;
 	
 	-- management
 	function Open (
@@ -55,18 +73,21 @@ package iconv.Streams is
 	pragma Inline (Is_Open);
 	
 	-- substitute (encoded as internal)
-	function Substitute (Object : Inout_Type)
+	function Substitute (
+		Object : Inout_Type) -- Open_Inout_Type
 		return Ada.Streams.Stream_Element_Array;
 	procedure Set_Substitute (
-		Object : in out Inout_Type;
+		Object : in out Inout_Type; -- Open_Inout_Type
 		Substitute : Ada.Streams.Stream_Element_Array);
 	
 	-- stream access
-	function Stream (Object : aliased in out Inout_Type)
+	function Stream (
+		Object : aliased in out Inout_Type) -- Open_Inout_Type
 		return not null access Ada.Streams.Root_Stream_Type'Class;
 	
 	-- finish writing
-	procedure Finish (Object : in out Inout_Type);
+	procedure Finish (
+		Object : in out Inout_Type); -- Open_Inout_Type
 	
 	-- exceptions
 	

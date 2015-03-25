@@ -23,11 +23,11 @@ package body iconv is
 	procedure Open (
 		Object : in out Converter;
 		To : String;
-		From : String) is
+		From : String)
+	is
+		pragma Check (Dynamic_Predicate,
+			not Is_Open (Object) or else raise Status_Error);
 	begin
-		if Handle (Object) /= System.Null_Address then
-			raise Status_Error;
-		end if;
 		Do_Open (
 			Object,
 			To => To,
@@ -52,18 +52,24 @@ package body iconv is
 		return Handle (Object) /= System.Null_Address;
 	end Is_Open;
 	
-	function Min_Size_In_From_Stream_Elements (Object : Converter)
+	function Min_Size_In_From_Stream_Elements (
+		Object : Converter)
 		return Ada.Streams.Stream_Element_Offset
 	is
+		pragma Check (Dynamic_Predicate,
+			Is_Open (Object) or else raise Status_Error);
 		NC_Converter : constant not null access constant Non_Controlled_Converter :=
 			Constant_Reference (Object);
 	begin
 		return NC_Converter.Min_Size_In_From_Stream_Elements;
 	end Min_Size_In_From_Stream_Elements;
 	
-	function Substitute (Object : Converter)
+	function Substitute (
+		Object : Converter)
 		return Ada.Streams.Stream_Element_Array
 	is
+		pragma Check (Dynamic_Predicate,
+			Is_Open (Object) or else raise Status_Error);
 		NC_Converter : constant not null access constant Non_Controlled_Converter :=
 			Constant_Reference (Object);
 	begin
@@ -74,6 +80,8 @@ package body iconv is
 		Object : in out Converter;
 		Substitute : in Ada.Streams.Stream_Element_Array)
 	is
+		pragma Check (Dynamic_Predicate,
+			Is_Open (Object) or else raise Status_Error);
 		NC_Converter : constant not null access Non_Controlled_Converter :=
 			Reference (Object);
 	begin
@@ -97,7 +105,7 @@ package body iconv is
 		Finishing_Status : Finishing_Status_Type;
 	begin
 		Convert (
-			Object,
+			Object, -- Status_Error would be raised if Object is not open
 			In_Item,
 			In_Last,
 			Out_Item,
@@ -123,6 +131,8 @@ package body iconv is
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
 		Status : out Continuing_Status_Type)
 	is
+		pragma Check (Dynamic_Predicate,
+			Is_Open (Object) or else raise Status_Error);
 		pragma Suppress (All_Checks);
 		-- C.char_ptr will be mapped access C.char / Interfaces.C.chars_ptr,
 		-- There is no shared convert way from System.Address (access Character)
@@ -132,52 +142,45 @@ package body iconv is
 		function To_Pointer is
 			new Ada.Unchecked_Conversion (System.Address, C.char_const_ptr);
 		Handle : constant System.Address := iconv.Handle (Object);
+		In_Pointer : aliased C.char_const_ptr :=
+			To_Pointer (In_Item (In_Item'First)'Address);
+		In_Size : aliased C.size_t := In_Item'Length;
+		Out_Pointer : aliased C.char_ptr :=
+			To_Pointer (Out_Item (Out_Item'First)'Address);
+		Out_Size : aliased C.size_t := Out_Item'Length;
+		errno : C.signed_int;
 	begin
-		if Handle = System.Null_Address then
-			raise Status_Error;
+		if C.iconv.iconv (
+			C.iconv.iconv_t (Handle),
+			In_Pointer'Access,
+			In_Size'Access,
+			Out_Pointer'Access,
+			Out_Size'Access) = C.size_t'Last
+		then
+			errno := C.errno.errno;
+			case errno is
+				when C.errno.E2BIG =>
+					Status := Overflow;
+				when C.errno.EINVAL
+					-- dirty hack for OSX
+					| -1601902748 | -1603246236 | -1609021596 | -1610246300
+				=>
+					Status := Truncated;
+				when C.errno.EILSEQ =>
+					Status := Illegal_Sequence;
+				when others =>
+					raise Use_Error
+						with "iconv failed (errno =" & C.signed_int'Image (errno) & ")";
+			end case;
 		else
-			declare
-				In_Pointer : aliased C.char_const_ptr :=
-					To_Pointer (In_Item (In_Item'First)'Address);
-				In_Size : aliased C.size_t := In_Item'Length;
-				Out_Pointer : aliased C.char_ptr :=
-					To_Pointer (Out_Item (Out_Item'First)'Address);
-				Out_Size : aliased C.size_t := Out_Item'Length;
-				errno : C.signed_int;
-			begin
-				if C.iconv.iconv (
-					C.iconv.iconv_t (Handle),
-					In_Pointer'Access,
-					In_Size'Access,
-					Out_Pointer'Access,
-					Out_Size'Access) = C.size_t'Last
-				then
-					errno := C.errno.errno;
-					case errno is
-						when C.errno.E2BIG =>
-							Status := Overflow;
-						when C.errno.EINVAL
-							-- dirty hack for OSX
-							| -1601902748 | -1603246236 | -1609021596 | -1610246300
-						=>
-							Status := Truncated;
-						when C.errno.EILSEQ =>
-							Status := Illegal_Sequence;
-						when others =>
-							raise Use_Error
-								with "iconv failed (errno =" & C.signed_int'Image (errno) & ")";
-					end case;
-				else
-					Status := Success;
-				end if;
-				In_Last := In_Item'First
-					+ (In_Item'Length - Ada.Streams.Stream_Element_Offset (In_Size))
-					- 1;
-				Out_Last := Out_Item'First
-					+ (Out_Item'Length - Ada.Streams.Stream_Element_Offset (Out_Size))
-					- 1;
-			end;
+			Status := Success;
 		end if;
+		In_Last := In_Item'First
+			+ (In_Item'Length - Ada.Streams.Stream_Element_Offset (In_Size))
+			- 1;
+		Out_Last := Out_Item'First
+			+ (Out_Item'Length - Ada.Streams.Stream_Element_Offset (Out_Size))
+			- 1;
 	end Convert;
 	
 	procedure Convert (
@@ -188,41 +191,36 @@ package body iconv is
 		Status : out Finishing_Status_Type)
 	is
 		pragma Unreferenced (Finish);
+		pragma Check (Dynamic_Predicate,
+			Is_Open (Object) or else raise Status_Error);
 		function To_Pointer is
 			new Ada.Unchecked_Conversion (System.Address, C.char_ptr);
 		Handle : constant System.Address := iconv.Handle (Object);
+		Out_Pointer : aliased C.char_ptr := To_Pointer (Out_Item'Address);
+		Out_Size : aliased C.size_t := Out_Item'Length;
+		errno : C.signed_int;
 	begin
-		if Handle = System.Null_Address then
-			raise Status_Error;
+		if C.iconv.iconv (
+			C.iconv.iconv_t (Handle),
+			C.char_const_ptr_ptr'(null),
+			null,
+			Out_Pointer'Access,
+			Out_Size'Access) = C.size_t'Last
+		then
+			errno := C.errno.errno;
+			case errno is
+				when C.errno.E2BIG =>
+					Status := Overflow;
+				when others => -- unknown
+					raise Use_Error
+						with "iconv failed (errno =" & C.signed_int'Image (errno) & ")";
+			end case;
 		else
-			declare
-				Out_Pointer : aliased C.char_ptr := To_Pointer (Out_Item'Address);
-				Out_Size : aliased C.size_t := Out_Item'Length;
-				errno : C.signed_int;
-			begin
-				if C.iconv.iconv (
-					C.iconv.iconv_t (Handle),
-					C.char_const_ptr_ptr'(null),
-					null,
-					Out_Pointer'Access,
-					Out_Size'Access) = C.size_t'Last
-				then
-					errno := C.errno.errno;
-					case errno is
-						when C.errno.E2BIG =>
-							Status := Overflow;
-						when others => -- unknown
-							raise Use_Error
-								with "iconv failed (errno =" & C.signed_int'Image (errno) & ")";
-					end case;
-				else
-					Status := Finished;
-				end if;
-				Out_Last := Out_Item'First
-					+ (Out_Item'Length - Ada.Streams.Stream_Element_Offset (Out_Size))
-					- 1;
-			end;
+			Status := Finished;
 		end if;
+		Out_Last := Out_Item'First
+			+ (Out_Item'Length - Ada.Streams.Stream_Element_Offset (Out_Size))
+			- 1;
 	end Convert;
 	
 	procedure Convert (
@@ -232,10 +230,7 @@ package body iconv is
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
 		Finish : in True_Only;
-		Status : out Status_Type)
-	is
-		NC_Converter : constant not null access constant Non_Controlled_Converter :=
-			Constant_Reference (Object);
+		Status : out Status_Type) is
 	begin
 		In_Last := In_Item'First - 1;
 		Out_Last := Out_Item'First - 1;
@@ -244,7 +239,7 @@ package body iconv is
 				Subsequence_Status : Subsequence_Status_Type;
 			begin
 				Convert (
-					Object,
+					Object, -- Status_Error would be raised if Object is not open
 					In_Item (In_Last + 1 .. In_Item'Last),
 					In_Last,
 					Out_Item (Out_Last + 1 .. Out_Item'Last),
@@ -279,6 +274,9 @@ package body iconv is
 							end if;
 						end;
 						declare
+							NC_Converter : constant
+								not null access constant Non_Controlled_Converter :=
+								Constant_Reference (Object);
 							New_Last : Ada.Streams.Stream_Element_Offset :=
 								In_Last + NC_Converter.Min_Size_In_From_Stream_Elements;
 						begin
@@ -301,10 +299,7 @@ package body iconv is
 		Out_Item : out Ada.Streams.Stream_Element_Array;
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
 		Finish : in True_Only;
-		Status : out Substituting_Status_Type)
-	is
-		NC_Converter : constant not null access constant Non_Controlled_Converter :=
-			Constant_Reference (Object);
+		Status : out Substituting_Status_Type) is
 	begin
 		In_Last := In_Item'First - 1;
 		Out_Last := Out_Item'First - 1;
@@ -313,7 +308,7 @@ package body iconv is
 				Subsequence_Status : Subsequence_Status_Type;
 			begin
 				Convert (
-					Object,
+					Object, -- Status_Error would be raised if Object is not open
 					In_Item (In_Last + 1 .. In_Item'Last),
 					In_Last,
 					Out_Item (Out_Last + 1 .. Out_Item'Last),
@@ -347,6 +342,9 @@ package body iconv is
 							end if;
 						end;
 						declare
+							NC_Converter : constant
+								not null access constant Non_Controlled_Converter :=
+								Constant_Reference (Object);
 							New_Last : Ada.Streams.Stream_Element_Offset :=
 								In_Last + NC_Converter.Min_Size_In_From_Stream_Elements;
 						begin
@@ -439,25 +437,19 @@ package body iconv is
 		function Reference (Object : in out Converter)
 			return not null access Non_Controlled_Converter is
 		begin
-			if Object.Handle = System.Null_Address then
-				raise Status_Error;
-			end if;
 			return Object.Data'Unchecked_Access;
 		end Reference;
 		
 		function Constant_Reference (Object : Converter)
 			return not null access constant Non_Controlled_Converter is
 		begin
-			if Object.Handle = System.Null_Address then
-				raise Status_Error;
-			end if;
 			return Object.Data'Unchecked_Access;
 		end Constant_Reference;
 		
 		procedure Finalize (Object : in out Converter) is
 		begin
 			if C.iconv.iconv_close (C.iconv.iconv_t (Object.Handle)) /= 0 then
-				null; -- raise Status_Error;
+				null;
 			end if;
 		end Finalize;
 		

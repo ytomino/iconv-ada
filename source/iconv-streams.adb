@@ -376,12 +376,13 @@ package body iconv.Streams is
 		return Object.Stream /= null;
 	end Is_Open;
 	
-	function Stream (Object : aliased in out In_Type)
-		return not null access Ada.Streams.Root_Stream_Type'Class is
+	function Stream (
+		Object : aliased in out In_Type)
+		return not null access Ada.Streams.Root_Stream_Type'Class
+	is
+		pragma Check (Dynamic_Predicate,
+			Is_Open (Object) or else raise Status_Error);
 	begin
-		if not Is_Open (Object) then
-			raise Status_Error;
-		end if;
 		return Object'Unchecked_Access;
 	end Stream;
 	
@@ -400,9 +401,11 @@ package body iconv.Streams is
 	
 	overriding procedure Write (
 		Object : in out In_Type;
-		Item : Ada.Streams.Stream_Element_Array) is
+		Item : Ada.Streams.Stream_Element_Array)
+	is
+		pragma Check (Dynamic_Predicate, Boolean'(raise Mode_Error));
 	begin
-		raise Mode_Error;
+		raise Program_Error;
 	end Write;
 	
 	-- implementation of only writing
@@ -426,20 +429,20 @@ package body iconv.Streams is
 		return Object.Stream /= null;
 	end Is_Open;
 	
-	function Stream (Object : aliased in out Out_Type)
-		return not null access Ada.Streams.Root_Stream_Type'Class is
+	function Stream (
+		Object : aliased in out Out_Type)
+		return not null access Ada.Streams.Root_Stream_Type'Class
+	is
+		pragma Check (Dynamic_Predicate,
+			Is_Open (Object) or else raise Status_Error);
 	begin
-		if not Is_Open (Object) then
-			raise Status_Error;
-		end if;
 		return Object'Unchecked_Access;
 	end Stream;
 	
 	procedure Finish (Object : in out Out_Type) is
+		pragma Check (Dynamic_Predicate,
+			Is_Open (Object) or else raise Status_Error);
 	begin
-		if not Is_Open (Object) then
-			raise Status_Error;
-		end if;
 		Finish (
 			Object.Stream,
 			Object.Writing_Converter.all,
@@ -449,9 +452,11 @@ package body iconv.Streams is
 	overriding procedure Read (
 		Object : in out Out_Type;
 		Item : out Ada.Streams.Stream_Element_Array;
-		Last : out Ada.Streams.Stream_Element_Offset) is
+		Last : out Ada.Streams.Stream_Element_Offset)
+	is
+		pragma Check (Dynamic_Predicate, Boolean'(raise Mode_Error));
 	begin
-		raise Mode_Error;
+		raise Program_Error;
 	end Read;
 	
 	overriding procedure Write (
@@ -490,15 +495,22 @@ package body iconv.Streams is
 		return Object.Stream /= null;
 	end Is_Open;
 	
-	function Substitute (Object : Inout_Type)
-		return Ada.Streams.Stream_Element_Array is
+	function Substitute (
+		Object : Inout_Type)
+		return Ada.Streams.Stream_Element_Array
+	is
+		pragma Check (Dynamic_Predicate,
+			Is_Open (Object) or else raise Status_Error);
 	begin
 		return Object.Substitute (1 .. Object.Substitute_Length);
 	end Substitute;
 	
 	procedure Set_Substitute (
 		Object : in out Inout_Type;
-		Substitute : Ada.Streams.Stream_Element_Array) is
+		Substitute : Ada.Streams.Stream_Element_Array)
+	is
+		pragma Check (Dynamic_Predicate,
+			Is_Open (Object) or else raise Status_Error);
 	begin
 		if Substitute'Length > Object.Substitute'Length then
 			raise Constraint_Error;
@@ -518,20 +530,22 @@ package body iconv.Streams is
 		end if;
 	end Set_Substitute;
 	
-	function Stream (Object : aliased in out Inout_Type)
-		return not null access Ada.Streams.Root_Stream_Type'Class is
+	function Stream (
+		Object : aliased in out Inout_Type)
+		return not null access Ada.Streams.Root_Stream_Type'Class
+	is
+		pragma Check (Dynamic_Predicate,
+			Is_Open (Object) or else raise Status_Error);
 	begin
-		if not Is_Open (Object) then
-			raise Status_Error;
-		end if;
 		return Object'Unchecked_Access;
 	end Stream;
 	
-	procedure Finish (Object : in out Inout_Type) is
+	procedure Finish (
+		Object : in out Inout_Type)
+	is
+		pragma Check (Dynamic_Predicate,
+			Is_Open (Object) or else raise Status_Error);
 	begin
-		if not Is_Open (Object) then
-			raise Status_Error;
-		end if;
 		if Is_Open (Object.Writing_Converter) then
 			Finish (
 				Object.Stream,
