@@ -366,21 +366,27 @@ package body iconv is
 		is
 			C_To : C.char_array (0 .. To'Length);
 			C_From : C.char_array (0 .. From'Length);
-			Dummy : C.void_ptr;
-			pragma Unreferenced (Dummy);
 			Invalid : constant System.Address := System.Storage_Elements.To_Address (
 				System.Storage_Elements.Integer_Address'Mod (-1));
 			Handle : System.Address;
 		begin
-			Dummy := C.string.memcpy (
-				C.void_ptr (C_To'Address),
-				C.void_const_ptr (To'Address),
-				C_To'Last);
+			declare
+				Dummy : C.void_ptr;
+			begin
+				Dummy := C.string.memcpy (
+					C.void_ptr (C_To'Address),
+					C.void_const_ptr (To'Address),
+					C_To'Last);
+			end;
 			C_To (C_To'Last) := C.char'Val (0);
-			Dummy := C.string.memcpy (
-				C.void_ptr (C_From'Address),
-				C.void_const_ptr (From'Address),
-				C_From'Last);
+			declare
+				Dummy : C.void_ptr;
+			begin
+				Dummy := C.string.memcpy (
+					C.void_ptr (C_From'Address),
+					C.void_const_ptr (From'Address),
+					C_From'Last);
+			end;
 			C_From (C_From'Last) := C.char'Val (0);
 			-- open
 			Handle := System.Address (

@@ -35,10 +35,9 @@ begin
 		begin
 			declare
 				S : aliased iconv.Streams.Inout_Type;
-				R : access Ada.Streams.Root_Stream_Type'Class;
-				pragma Unreferenced (R);
+				Dummy : access Ada.Streams.Root_Stream_Type'Class;
 			begin
-				R := iconv.Streams.Stream (S);
+				Dummy := iconv.Streams.Stream (S);
 				raise Program_Error; -- Status_Error shold be raised
 			end;
 		exception
