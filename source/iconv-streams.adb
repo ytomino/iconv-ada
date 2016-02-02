@@ -521,12 +521,12 @@ package body iconv.Streams is
 		if Is_Open (Object.Reading_Converter) then
 			Set_Substitute_To_Reading_Converter (
 				Object.Reading_Converter,
-				Substitute);
+				Object.Substitute (1 .. Object.Substitute_Length));
 		end if;
 		if Is_Open (Object.Writing_Converter) then
 			Set_Substitute_To_Writing_Converter (
 				Object.Writing_Converter,
-				Substitute);
+				Object.Substitute (1 .. Object.Substitute_Length));
 		end if;
 	end Set_Substitute;
 	
