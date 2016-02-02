@@ -4,8 +4,8 @@ with iconv.Strings;
 procedure Test_Strings is
 	use type Ada.Streams.Stream_Element_Array;
 	L1_A : constant String := "A";
-	U16BE_A : constant Ada.Streams.Stream_Element_Array := (0, 16#41#);
-	U16BE_JAPANEASE_A : constant Ada.Streams.Stream_Element_Array :=
+	U16BE_A : constant Ada.Streams.Stream_Element_Array (1 .. 2) := (0, 16#41#);
+	U16BE_JAPANEASE_A : constant Ada.Streams.Stream_Element_Array (1 .. 2) :=
 		(16#30#, 16#42#);
 begin
 	declare
