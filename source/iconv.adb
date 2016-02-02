@@ -51,8 +51,10 @@ package body iconv is
 	end Open;
 	
 	function Is_Open (Object : Converter) return Boolean is
+		NC_Object : Non_Controlled_Converter
+			renames Controlled.Constant_Reference (Object).all;
 	begin
-		return Handle (Object) /= System.Null_Address;
+		return NC_Object.Handle /= System.Null_Address;
 	end Is_Open;
 	
 	function Min_Size_In_From_Stream_Elements (
@@ -61,10 +63,10 @@ package body iconv is
 	is
 		pragma Check (Dynamic_Predicate,
 			Is_Open (Object) or else raise Status_Error);
-		NC_Converter : constant not null access constant Non_Controlled_Converter :=
-			Constant_Reference (Object);
+		NC_Object : Non_Controlled_Converter
+			renames Controlled.Constant_Reference (Object).all;
 	begin
-		return NC_Converter.Min_Size_In_From_Stream_Elements;
+		return NC_Object.Min_Size_In_From_Stream_Elements;
 	end Min_Size_In_From_Stream_Elements;
 	
 	function Substitute (
@@ -73,10 +75,10 @@ package body iconv is
 	is
 		pragma Check (Dynamic_Predicate,
 			Is_Open (Object) or else raise Status_Error);
-		NC_Converter : constant not null access constant Non_Controlled_Converter :=
-			Constant_Reference (Object);
+		NC_Object : Non_Controlled_Converter
+			renames Controlled.Constant_Reference (Object).all;
 	begin
-		return NC_Converter.Substitute (1 .. NC_Converter.Substitute_Length);
+		return NC_Object.Substitute (1 .. NC_Object.Substitute_Length);
 	end Substitute;
 	
 	procedure Set_Substitute (
@@ -85,14 +87,14 @@ package body iconv is
 	is
 		pragma Check (Dynamic_Predicate,
 			Is_Open (Object) or else raise Status_Error);
-		NC_Converter : constant not null access Non_Controlled_Converter :=
-			Reference (Object);
+		NC_Object : Non_Controlled_Converter
+			renames Controlled.Reference (Object).all;
 	begin
-		if Substitute'Length > NC_Converter.Substitute'Length then
+		if Substitute'Length > NC_Object.Substitute'Length then
 			raise Constraint_Error;
 		end if;
-		NC_Converter.Substitute_Length := Substitute'Length;
-		NC_Converter.Substitute (1 .. NC_Converter.Substitute_Length) := Substitute;
+		NC_Object.Substitute_Length := Substitute'Length;
+		NC_Object.Substitute (1 .. NC_Object.Substitute_Length) := Substitute;
 	end Set_Substitute;
 	
 	procedure Convert (
@@ -137,7 +139,8 @@ package body iconv is
 		pragma Check (Dynamic_Predicate,
 			Is_Open (Object) or else raise Status_Error);
 		pragma Suppress (All_Checks);
-		Handle : constant System.Address := iconv.Handle (Object);
+		NC_Object : Non_Controlled_Converter
+			renames Controlled.Constant_Reference (Object).all;
 		In_Pointer : aliased C.char_const_ptr :=
 			C.char_const_ptr (
 				char_ptr_Conv.To_Pointer (In_Item (In_Item'First)'Address));
@@ -149,7 +152,7 @@ package body iconv is
 		errno : C.signed_int;
 	begin
 		if C.iconv.iconv (
-			C.iconv.iconv_t (Handle),
+			C.iconv.iconv_t (NC_Object.Handle),
 			In_Pointer'Access,
 			In_Size'Access,
 			Out_Pointer'Access,
@@ -191,14 +194,15 @@ package body iconv is
 		pragma Unreferenced (Finish);
 		pragma Check (Dynamic_Predicate,
 			Is_Open (Object) or else raise Status_Error);
-		Handle : constant System.Address := iconv.Handle (Object);
+		NC_Object : Non_Controlled_Converter
+			renames Controlled.Constant_Reference (Object).all;
 		Out_Pointer : aliased C.char_ptr :=
 			C.char_ptr (char_ptr_Conv.To_Pointer (Out_Item'Address));
 		Out_Size : aliased C.size_t := Out_Item'Length;
 		errno : C.signed_int;
 	begin
 		if C.iconv.iconv (
-			C.iconv.iconv_t (Handle),
+			C.iconv.iconv_t (NC_Object.Handle),
 			C.char_const_ptr_ptr'(null),
 			null,
 			Out_Pointer'Access,
@@ -271,11 +275,8 @@ package body iconv is
 							end if;
 						end;
 						declare
-							NC_Converter : constant
-								not null access constant Non_Controlled_Converter :=
-								Constant_Reference (Object);
 							New_Last : Ada.Streams.Stream_Element_Offset :=
-								In_Last + NC_Converter.Min_Size_In_From_Stream_Elements;
+								In_Last + Min_Size_In_From_Stream_Elements (Object);
 						begin
 							if New_Last > In_Item'Last
 								or else New_Last < In_Last -- overflow
@@ -339,11 +340,8 @@ package body iconv is
 							end if;
 						end;
 						declare
-							NC_Converter : constant
-								not null access constant Non_Controlled_Converter :=
-								Constant_Reference (Object);
 							New_Last : Ada.Streams.Stream_Element_Offset :=
-								In_Last + NC_Converter.Min_Size_In_From_Stream_Elements;
+								In_Last + Min_Size_In_From_Stream_Elements (Object);
 						begin
 							if New_Last > In_Item'Last
 								or else New_Last < In_Last -- overflow
@@ -359,104 +357,103 @@ package body iconv is
 	
 	package body Controlled is
 		
-		procedure Do_Open (
-			Object : out Converter;
-			To : in String;
-			From : in String)
-		is
-			C_To : C.char_array (0 .. To'Length);
-			C_From : C.char_array (0 .. From'Length);
-			Invalid : constant System.Address := System.Storage_Elements.To_Address (
-				System.Storage_Elements.Integer_Address'Mod (-1));
-			Handle : System.Address;
-		begin
-			declare
-				Dummy : C.void_ptr;
-			begin
-				Dummy := C.string.memcpy (
-					C.void_ptr (C_To'Address),
-					C.void_const_ptr (To'Address),
-					C_To'Last);
-			end;
-			C_To (C_To'Last) := C.char'Val (0);
-			declare
-				Dummy : C.void_ptr;
-			begin
-				Dummy := C.string.memcpy (
-					C.void_ptr (C_From'Address),
-					C.void_const_ptr (From'Address),
-					C_From'Last);
-			end;
-			C_From (C_From'Last) := C.char'Val (0);
-			-- open
-			Handle := System.Address (
-				C.iconv.iconv_open (
-					C_To (0)'Access,
-					C_From (0)'Access));
-			if Handle = Invalid then
-				raise Name_Error;
-			end if;
-			Object.Handle := Handle;
-			-- about "From"
-			Object.Data.Min_Size_In_From_Stream_Elements := 1; -- fallback
-			declare
-				In_Buffer : aliased constant C.char_array (
-					0 ..
-					Max_Length_Of_Single_Character - 1) := (others => C.char'Val (0));
-			begin
-				for I in C.size_t'(1) .. Max_Length_Of_Single_Character loop
-					declare
-						In_Pointer : aliased C.char_const_ptr := In_Buffer (0)'Unchecked_Access;
-						In_Size : aliased C.size_t := I;
-						Out_Buffer : aliased C.char_array (
-							0 ..
-							Max_Length_Of_Single_Character - 1);
-						Out_Pointer : aliased C.char_ptr := Out_Buffer (0)'Unchecked_Access;
-						Out_Size : aliased C.size_t := Max_Length_Of_Single_Character;
-					begin
-						if C.iconv.iconv (
-							C.iconv.iconv_t (Handle),
-							In_Pointer'Access,
-							In_Size'Access,
-							Out_Pointer'Access,
-							Out_Size'Access) /= C.size_t'Last
-						then
-							Object.Data.Min_Size_In_From_Stream_Elements :=
-								Ada.Streams.Stream_Element_Offset (I);
-							exit;
-						end if;
-					end;
-				end loop;
-			end;
-			-- about "To"
-			Object.Data.Substitute_Length := 0;
-		end Do_Open;
-		
-		function Handle (Object : Converter) return System.Address is
-		begin
-			return Object.Handle;
-		end Handle;
-		
-		function Reference (Object : in out Converter)
+		function Reference (Object : in out iconv.Converter)
 			return not null access Non_Controlled_Converter is
 		begin
-			return Object.Data'Unchecked_Access;
+			return Converter (Object).Data'Unrestricted_Access;
 		end Reference;
 		
-		function Constant_Reference (Object : Converter)
+		function Constant_Reference (Object : iconv.Converter)
 			return not null access constant Non_Controlled_Converter is
 		begin
-			return Object.Data'Unchecked_Access;
+			return Converter (Object).Data'Unchecked_Access;
 		end Constant_Reference;
 		
 		procedure Finalize (Object : in out Converter) is
 		begin
-			if C.iconv.iconv_close (C.iconv.iconv_t (Object.Handle)) /= 0 then
+			if C.iconv.iconv_close (
+				C.iconv.iconv_t (Object.Data.Handle)) /= 0
+			then
 				null;
 			end if;
 		end Finalize;
 		
 	end Controlled;
+	
+	procedure Do_Open (
+		Object : out Converter;
+		To : in String;
+		From : in String)
+	is
+		NC_Object : Non_Controlled_Converter
+			renames Controlled.Reference (Object).all;
+		C_To : C.char_array (0 .. To'Length);
+		C_From : C.char_array (0 .. From'Length);
+		Invalid : constant System.Address := System.Storage_Elements.To_Address (
+			System.Storage_Elements.Integer_Address'Mod (-1));
+		Handle : System.Address;
+	begin
+		declare
+			Dummy : C.void_ptr;
+		begin
+			Dummy := C.string.memcpy (
+				C.void_ptr (C_To'Address),
+				C.void_const_ptr (To'Address),
+				C_To'Last);
+		end;
+		C_To (C_To'Last) := C.char'Val (0);
+		declare
+			Dummy : C.void_ptr;
+		begin
+			Dummy := C.string.memcpy (
+				C.void_ptr (C_From'Address),
+				C.void_const_ptr (From'Address),
+				C_From'Last);
+		end;
+		C_From (C_From'Last) := C.char'Val (0);
+		-- open
+		Handle := System.Address (
+			C.iconv.iconv_open (
+				C_To (0)'Access,
+				C_From (0)'Access));
+		if Handle = Invalid then
+			raise Name_Error;
+		end if;
+		NC_Object.Handle := Handle;
+		-- about "From"
+		NC_Object.Min_Size_In_From_Stream_Elements := 1; -- fallback
+		declare
+			In_Buffer : aliased constant C.char_array (
+				0 ..
+				Max_Length_Of_Single_Character - 1) := (others => C.char'Val (0));
+		begin
+			for I in C.size_t'(1) .. Max_Length_Of_Single_Character loop
+				declare
+					In_Pointer : aliased C.char_const_ptr := In_Buffer (0)'Unchecked_Access;
+					In_Size : aliased C.size_t := I;
+					Out_Buffer : aliased C.char_array (
+						0 ..
+						Max_Length_Of_Single_Character - 1);
+					Out_Pointer : aliased C.char_ptr := Out_Buffer (0)'Unchecked_Access;
+					Out_Size : aliased C.size_t := Max_Length_Of_Single_Character;
+				begin
+					if C.iconv.iconv (
+						C.iconv.iconv_t (Handle),
+						In_Pointer'Access,
+						In_Size'Access,
+						Out_Pointer'Access,
+						Out_Size'Access) /= C.size_t'Last
+					then
+						NC_Object.Min_Size_In_From_Stream_Elements :=
+							Ada.Streams.Stream_Element_Offset (I);
+						exit;
+					end if;
+				end;
+			end loop;
+		end;
+		-- about "To"
+		NC_Object.Substitute_Length := 0;
+	end Do_Open;
 	
 	procedure Put_Substitute (
 		Object : in Converter;
@@ -464,15 +461,15 @@ package body iconv is
 		Out_Last : out Ada.Streams.Stream_Element_Offset;
 		Is_Overflow : out Boolean)
 	is
-		NC_Converter : constant not null access constant Non_Controlled_Converter :=
-			Constant_Reference (Object);
+		NC_Object : Non_Controlled_Converter
+			renames Controlled.Constant_Reference (Object).all;
 	begin
 		Out_Last := Out_Item'First - 1;
-		Is_Overflow := Out_Item'Length < NC_Converter.Substitute_Length;
+		Is_Overflow := Out_Item'Length < NC_Object.Substitute_Length;
 		if not Is_Overflow then
-			Out_Last := Out_Last + NC_Converter.Substitute_Length;
+			Out_Last := Out_Last + NC_Object.Substitute_Length;
 			Out_Item (Out_Item'First .. Out_Last) :=
-				NC_Converter.Substitute (1 .. NC_Converter.Substitute_Length);
+				NC_Object.Substitute (1 .. NC_Object.Substitute_Length);
 		end if;
 	end Put_Substitute;
 	

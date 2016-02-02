@@ -140,6 +140,7 @@ private
 	-- converter
 	
 	type Non_Controlled_Converter is record
+		Handle : System.Address := System.Null_Address;
 		-- about "From"
 		Min_Size_In_From_Stream_Elements : Ada.Streams.Stream_Element_Offset;
 		-- about "To"
@@ -154,18 +155,9 @@ private
 		
 		type Converter is limited private;
 		
-		procedure Do_Open (
-			Object : out Converter;
-			To : in String;
-			From : in String);
-		
-		function Handle (Object : Converter) return System.Address;
-		
-		pragma Inline (Handle);
-		
-		function Reference (Object : in out Converter)
+		function Reference (Object : in out iconv.Converter)
 			return not null access Non_Controlled_Converter;
-		function Constant_Reference (Object : Converter)
+		function Constant_Reference (Object : iconv.Converter)
 			return not null access constant Non_Controlled_Converter;
 		
 		pragma Inline (Reference);
@@ -176,7 +168,6 @@ private
 		type Converter is
 			limited new Ada.Finalization.Limited_Controlled with
 		record
-			Handle : aliased System.Address := System.Null_Address;
 			Data : aliased Non_Controlled_Converter;
 		end record;
 		
@@ -185,6 +176,11 @@ private
 	end Controlled;
 	
 	type Converter is new Controlled.Converter;
+	
+	procedure Do_Open (
+		Object : out Converter;
+		To : in String;
+		From : in String);
 	
 	procedure Put_Substitute (
 		Object : in Converter;
