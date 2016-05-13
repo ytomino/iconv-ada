@@ -6,12 +6,14 @@ package body iconv.Inside is
 	function Do_One (
 		namescount : C.unsigned_int;
 		names : access C.char_const_ptr;
-		data : C.void_ptr) return C.signed_int;
+		data : C.void_ptr)
+		return C.signed_int;
 	pragma Convention (C, Do_One);
 	function Do_One (
 		namescount : C.unsigned_int;
 		names : access C.char_const_ptr;
-		data : C.void_ptr) return C.signed_int
+		data : C.void_ptr)
+		return C.signed_int
 	is
 		Process : access procedure (Name : in String);
 		pragma Import (Ada, Process);
