@@ -7,26 +7,27 @@ package body iconv.Inside is
 		namescount : C.unsigned_int;
 		names : access C.char_const_ptr;
 		data : C.void_ptr)
-		return C.signed_int;
-	pragma Convention (C, Do_One);
+		return C.signed_int
+		with Convention => C;
+	
 	function Do_One (
 		namescount : C.unsigned_int;
 		names : access C.char_const_ptr;
 		data : C.void_ptr)
 		return C.signed_int
 	is
-		Process : access procedure (Name : in String);
-		pragma Import (Ada, Process);
+		Process : access procedure (Name : in String)
+			with Import;
 		for Process'Address use System.Address (data);
-		Names_Array : array (1 .. namescount) of C.char_const_ptr;
-		pragma Import (Ada, Names_Array);
+		Names_Array : array (1 .. namescount) of C.char_const_ptr
+			with Import;
 		for Names_Array'Address use names.all'Address;
 	begin
 		for I in 1 .. namescount loop
 			declare
 				Length : constant Natural := Natural (C.string.strlen (Names_Array (I)));
-				Name : String (1 .. Length);
-				pragma Import (Ada, Name);
+				Name : String (1 .. Length)
+					with Import;
 				for Name'Address use Names_Array (I).all'Address;
 			begin
 				Process (Name);
