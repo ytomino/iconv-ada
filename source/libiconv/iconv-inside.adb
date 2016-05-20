@@ -3,6 +3,7 @@ with C.iconv;
 with C.string;
 package body iconv.Inside is
 	use type C.unsigned_int;
+	use type C.size_t;
 	
 	function Do_One (
 		namescount : C.unsigned_int;
@@ -15,33 +16,38 @@ package body iconv.Inside is
 		namescount : C.unsigned_int;
 		names : access C.char_const_ptr;
 		data : C.void_ptr)
-		return C.signed_int
-	is
-		type Process_Type is access procedure (Name : in String);
-		function To_Process is
-			new Ada.Unchecked_Conversion (C.void_ptr, Process_Type);
-		type char_const_ptr_arrayN is
-			array (1 .. namescount) of C.char_const_ptr
-			with Convention => C;
-		type char_const_ptr_arrayN_const_ptr is
-			access constant char_const_ptr_arrayN
-			with Convention => C;
-		function To_char_const_ptr_arrayN_const_ptr is
-			new Ada.Unchecked_Conversion (
-				C.char_const_ptr_ptr,
-				char_const_ptr_arrayN_const_ptr);
-		Names_Array : char_const_ptr_arrayN
-			renames To_char_const_ptr_arrayN_const_ptr (names).all;
+		return C.signed_int is
 	begin
-		for I in 1 .. namescount loop
+		if namescount > 0 then
 			declare
-				Length : constant Natural := Natural (C.string.strlen (Names_Array (I)));
-				Name : String (1 .. Length);
-				for Name'Address use Names_Array (I).all'Address;
+				type Process_Type is access procedure (Name : in String);
+				function To_Process is
+					new Ada.Unchecked_Conversion (C.void_ptr, Process_Type);
+				type char_const_ptr_arrayN is
+					array (0 .. C.size_t (namescount) - 1) of C.char_const_ptr
+					with Convention => C;
+				type char_const_ptr_arrayN_const_ptr is
+					access constant char_const_ptr_arrayN
+					with Convention => C;
+				function To_char_const_ptr_arrayN_const_ptr is
+					new Ada.Unchecked_Conversion (
+						C.char_const_ptr_ptr,
+						char_const_ptr_arrayN_const_ptr);
+				Names_Array : char_const_ptr_arrayN
+					renames To_char_const_ptr_arrayN_const_ptr (names).all;
 			begin
-				To_Process (data) (Name);
+				for I in 0 .. C.size_t (namescount) - 1 loop
+					declare
+						Length : constant Natural :=
+							Natural (C.string.strlen (Names_Array (I)));
+						Name : String (1 .. Length);
+						for Name'Address use Names_Array (I).all'Address;
+					begin
+						To_Process (data) (Name);
+					end;
+				end loop;
 			end;
-		end loop;
+		end if;
 		return 0;
 	end Do_One;
 	
