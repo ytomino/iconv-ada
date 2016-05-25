@@ -366,7 +366,7 @@ package body iconv.Streams is
 	begin
 		return Result : In_Type do
 			Result.Stream := Stream;
-			Result.Reading_Converter := Decoder'Unrestricted_Access;
+			Result.Reading_Converter := Variable_View (Decoder);
 			Initialize (Result.Reading_Context);
 		end return;
 	end Open;
@@ -419,7 +419,7 @@ package body iconv.Streams is
 	begin
 		return Result : Out_Type do
 			Result.Stream := Stream;
-			Result.Writing_Converter := Encoder'Unrestricted_Access;
+			Result.Writing_Converter := Variable_View (Encoder);
 			Initialize (Result.Writing_Context);
 		end return;
 	end Open;

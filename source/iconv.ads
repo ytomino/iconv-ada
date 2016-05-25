@@ -155,6 +155,10 @@ private
 		
 		type Converter is limited private;
 		
+		function Variable_View (Object : Converter)
+			return not null access Converter;
+		pragma Inline (Variable_View);
+		
 		function Reference (Object : in out iconv.Converter)
 			return not null access Non_Controlled_Converter;
 		function Constant_Reference (Object : iconv.Converter)
@@ -168,6 +172,8 @@ private
 		type Converter is
 			limited new Ada.Finalization.Limited_Controlled with
 		record
+			Variable_View : not null access Converter :=
+				Converter'Unchecked_Access;
 			Data : aliased Non_Controlled_Converter;
 		end record;
 		

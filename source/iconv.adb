@@ -357,10 +357,16 @@ package body iconv is
 	
 	package body Controlled is
 		
+		function Variable_View (Object : Converter)
+			return not null access Converter is
+		begin
+			return Object.Variable_View;
+		end Variable_View;
+		
 		function Reference (Object : in out iconv.Converter)
 			return not null access Non_Controlled_Converter is
 		begin
-			return Converter (Object).Data'Unrestricted_Access;
+			return Converter (Object).Variable_View.Data'Access;
 		end Reference;
 		
 		function Constant_Reference (Object : iconv.Converter)
