@@ -23,6 +23,7 @@ begin
 	end;
 	declare
 		E : iconv.Strings.Encoder := iconv.Strings.To ("UTF-16BE");
+		pragma Unmodified (E);
 	begin
 		pragma Assert (iconv.Strings.Encode (E, L1_A) = U16BE_A);
 		null;
