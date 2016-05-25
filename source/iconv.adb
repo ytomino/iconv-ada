@@ -393,8 +393,8 @@ package body iconv is
 	is
 		NC_Object : Non_Controlled_Converter
 			renames Controlled.Reference (Object).all;
-		C_To : C.char_array (0 .. To'Length);
-		C_From : C.char_array (0 .. From'Length);
+		C_To : aliased C.char_array (0 .. To'Length);
+		C_From : aliased C.char_array (0 .. From'Length);
 		Invalid : constant System.Address := System.Storage_Elements.To_Address (
 			System.Storage_Elements.Integer_Address'Mod (-1));
 		Handle : System.Address;
