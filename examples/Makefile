@@ -23,7 +23,7 @@ BFLAGS=-E
 LFLAGS=-ggdb
 HFLAGS=
 
-ifneq ($(findstring linux,$(TARGET)),)
+ifneq ($(findstring linux-gnu,$(TARGET)),)
 ICONVTYPE=lfs
 else
 ICONVTYPE=libiconv

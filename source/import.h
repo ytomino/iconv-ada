@@ -7,7 +7,7 @@
 	char const **inbuf, size_t *inbytesleft, \
 	char **outbuf, size_t *outbytesleft)
 #pragma for Ada "errno.h" include "sys/errno.h"
-#elif defined(__linux__)
+#elif defined(__gnu_linux__)
 #pragma for Ada overload size_t iconv (iconv_t __cd, \
 	char const ** restrict __inbuf, size_t * restrict __inbytesleft, \
 	char ** restrict __outbuf, size_t * restrict __outbytesleft)
