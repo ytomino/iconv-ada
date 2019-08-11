@@ -60,10 +60,10 @@ $(BUILDDIR)/%: %.adb $(wildcard $(SOURCEDIR)/*) $(wildcard $(SOURCEDIR)/$(ICONVT
 	cd $(BUILDDIR) && $(GCCPREFIX)gnatlink$(GCCSUFFIX) -o ../$@ $(basename $(notdir $<)).ali $(GFLAGS) $(LFLAGS)
 
 $(BUILDDIR):
-	mkdir $(BUILDDIR)
+	mkdir $@
 
 $(BINLN): | $(BUILDDIR)
-	ln -s $(BUILDDIR) $(BINLN)
+	ln -s $(BUILDDIR) $@
 
 $(EXAMPLES): %: $(BUILDDIR)/% $(BINLN)
 
