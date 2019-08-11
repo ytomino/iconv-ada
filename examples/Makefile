@@ -30,7 +30,7 @@ ICONVTYPE=libiconv
 endif
 
 ifneq ($(DRAKE_RTSROOT),)
-VERSION:=$(shell$(GCC) -dumpversion)
+VERSION:=$(shell $(GCC) -dumpversion)
 DRAKE_RTSDIR=$(DRAKE_RTSROOT)/$(TARGET)/$(VERSION)
 endif
 ifneq ($(DRAKE_RTSDIR),)
