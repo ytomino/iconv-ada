@@ -376,8 +376,9 @@ package body iconv is
 		
 		procedure Finalize (Object : in out Converter) is
 		begin
-			if C.iconv.iconv_close (
-				C.iconv.iconv_t (Object.Data.Handle)) /= 0
+			if Object.Data.Handle /= System.Null_Address -- for glibc
+				and then C.iconv.iconv_close (
+					C.iconv.iconv_t (Object.Data.Handle)) /= 0
 			then
 				null;
 			end if;
