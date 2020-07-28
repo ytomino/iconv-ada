@@ -139,7 +139,7 @@ private
 	-- converter
 	
 	type Non_Controlled_Converter is record
-		Handle : System.Address := System.Null_Address;
+		Handle : System.Address;
 		-- about "From"
 		Min_Size_In_From_Stream_Elements : Ada.Streams.Stream_Element_Offset;
 		-- about "To"
@@ -173,7 +173,8 @@ private
 		record
 			Variable_View : not null access Converter :=
 				Converter'Unchecked_Access;
-			Data : aliased Non_Controlled_Converter;
+			Data : aliased Non_Controlled_Converter :=
+				(Handle => System.Null_Address, others => <>);
 		end record;
 		
 		overriding procedure Finalize (Object : in out Converter);
