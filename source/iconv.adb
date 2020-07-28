@@ -1,4 +1,3 @@
-pragma Ada_2012;
 with System.Address_To_Access_Conversions;
 with System.Storage_Elements;
 with C.errno;

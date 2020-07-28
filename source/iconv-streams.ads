@@ -1,4 +1,3 @@
-pragma Ada_2012;
 with Ada.Streams;
 package iconv.Streams is
 	pragma Preelaborate;

@@ -1,4 +1,3 @@
-pragma Ada_2012;
 package body iconv.Streams is
 	use type Ada.Streams.Stream_Element;
 	use type Ada.Streams.Stream_Element_Array;

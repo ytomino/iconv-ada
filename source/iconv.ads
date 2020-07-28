@@ -1,4 +1,3 @@
-pragma Ada_2012;
 with Ada.Finalization;
 with Ada.IO_Exceptions;
 with Ada.Streams;
