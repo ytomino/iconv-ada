@@ -1,6 +1,4 @@
 package body iconv.Streams is
-	use type Ada.Streams.Stream_Element;
-	use type Ada.Streams.Stream_Element_Array;
 	
 	procedure Adjust_Buffer (
 		Buffer : in out Buffer_Type;

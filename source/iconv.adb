@@ -9,7 +9,6 @@ package body iconv is
 	use type System.Address;
 	use type C.signed_int;
 	use type C.size_t;
-	use type C.unsigned_int;
 	
 	package char_ptr_Conv is
 		new System.Address_To_Access_Conversions (C.char);
