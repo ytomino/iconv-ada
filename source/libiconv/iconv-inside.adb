@@ -34,7 +34,7 @@ package body iconv.Inside is
 						C.char_const_ptr_ptr,
 						char_const_ptr_arrayN_const_ptr);
 				Names_Array : char_const_ptr_arrayN
-					renames To_char_const_ptr_arrayN_const_ptr (names).all;
+					renames To_char_const_ptr_arrayN_const_ptr (C.char_const_ptr_ptr (names)).all;
 			begin
 				for I in 0 .. C.size_t (namescount) - 1 loop
 					declare
