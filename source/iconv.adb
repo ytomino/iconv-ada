@@ -27,7 +27,7 @@ package body iconv is
 		From : in String)
 	is
 		pragma Check (Dynamic_Predicate,
-			not Is_Open (Object) or else raise Status_Error);
+			Check => not Is_Open (Object) or else raise Status_Error);
 	begin
 		Do_Open (
 			Object,
@@ -60,7 +60,7 @@ package body iconv is
 		return Ada.Streams.Stream_Element_Offset
 	is
 		pragma Check (Dynamic_Predicate,
-			Is_Open (Object) or else raise Status_Error);
+			Check => Is_Open (Object) or else raise Status_Error);
 		NC_Object : Non_Controlled_Converter
 			renames Controlled.Constant_Reference (Object).all;
 	begin
@@ -72,7 +72,7 @@ package body iconv is
 		return Ada.Streams.Stream_Element_Array
 	is
 		pragma Check (Dynamic_Predicate,
-			Is_Open (Object) or else raise Status_Error);
+			Check => Is_Open (Object) or else raise Status_Error);
 		NC_Object : Non_Controlled_Converter
 			renames Controlled.Constant_Reference (Object).all;
 	begin
@@ -84,7 +84,7 @@ package body iconv is
 		Substitute : in Ada.Streams.Stream_Element_Array)
 	is
 		pragma Check (Dynamic_Predicate,
-			Is_Open (Object) or else raise Status_Error);
+			Check => Is_Open (Object) or else raise Status_Error);
 		NC_Object : Non_Controlled_Converter
 			renames Controlled.Reference (Object).all;
 	begin
@@ -135,7 +135,7 @@ package body iconv is
 		Status : out Continuing_Status_Type)
 	is
 		pragma Check (Dynamic_Predicate,
-			Is_Open (Object) or else raise Status_Error);
+			Check => Is_Open (Object) or else raise Status_Error);
 		pragma Suppress (All_Checks);
 		NC_Object : Non_Controlled_Converter
 			renames Controlled.Constant_Reference (Object).all;
@@ -191,7 +191,7 @@ package body iconv is
 	is
 		pragma Unreferenced (Finish);
 		pragma Check (Dynamic_Predicate,
-			Is_Open (Object) or else raise Status_Error);
+			Check => Is_Open (Object) or else raise Status_Error);
 		NC_Object : Non_Controlled_Converter
 			renames Controlled.Constant_Reference (Object).all;
 		Out_Pointer : aliased C.char_ptr :=

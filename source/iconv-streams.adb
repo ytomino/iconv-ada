@@ -378,7 +378,7 @@ package body iconv.Streams is
 		return not null access Ada.Streams.Root_Stream_Type'Class
 	is
 		pragma Check (Dynamic_Predicate,
-			Is_Open (Object) or else raise Status_Error);
+			Check => Is_Open (Object) or else raise Status_Error);
 	begin
 		return Object'Unchecked_Access;
 	end Stream;
@@ -400,7 +400,7 @@ package body iconv.Streams is
 		Object : in out In_Type;
 		Item : in Ada.Streams.Stream_Element_Array)
 	is
-		pragma Check (Dynamic_Predicate, Boolean'(raise Mode_Error));
+		pragma Check (Dynamic_Predicate, Check => Boolean'(raise Mode_Error));
 	begin
 		raise Program_Error;
 	end Write;
@@ -431,14 +431,14 @@ package body iconv.Streams is
 		return not null access Ada.Streams.Root_Stream_Type'Class
 	is
 		pragma Check (Dynamic_Predicate,
-			Is_Open (Object) or else raise Status_Error);
+			Check => Is_Open (Object) or else raise Status_Error);
 	begin
 		return Object'Unchecked_Access;
 	end Stream;
 	
 	procedure Finish (Object : in out Out_Type) is
 		pragma Check (Dynamic_Predicate,
-			Is_Open (Object) or else raise Status_Error);
+			Check => Is_Open (Object) or else raise Status_Error);
 	begin
 		Finish (
 			Object.Stream,
@@ -451,7 +451,7 @@ package body iconv.Streams is
 		Item : out Ada.Streams.Stream_Element_Array;
 		Last : out Ada.Streams.Stream_Element_Offset)
 	is
-		pragma Check (Dynamic_Predicate, Boolean'(raise Mode_Error));
+		pragma Check (Dynamic_Predicate, Check => Boolean'(raise Mode_Error));
 	begin
 		raise Program_Error;
 	end Read;
@@ -497,7 +497,7 @@ package body iconv.Streams is
 		return Ada.Streams.Stream_Element_Array
 	is
 		pragma Check (Dynamic_Predicate,
-			Is_Open (Object) or else raise Status_Error);
+			Check => Is_Open (Object) or else raise Status_Error);
 	begin
 		return Object.Substitute (1 .. Object.Substitute_Length);
 	end Substitute;
@@ -507,7 +507,7 @@ package body iconv.Streams is
 		Substitute : in Ada.Streams.Stream_Element_Array)
 	is
 		pragma Check (Dynamic_Predicate,
-			Is_Open (Object) or else raise Status_Error);
+			Check => Is_Open (Object) or else raise Status_Error);
 	begin
 		if Substitute'Length > Object.Substitute'Length then
 			raise Constraint_Error;
@@ -532,7 +532,7 @@ package body iconv.Streams is
 		return not null access Ada.Streams.Root_Stream_Type'Class
 	is
 		pragma Check (Dynamic_Predicate,
-			Is_Open (Object) or else raise Status_Error);
+			Check => Is_Open (Object) or else raise Status_Error);
 	begin
 		return Object'Unchecked_Access;
 	end Stream;
@@ -541,7 +541,7 @@ package body iconv.Streams is
 		Object : in out Inout_Type)
 	is
 		pragma Check (Dynamic_Predicate,
-			Is_Open (Object) or else raise Status_Error);
+			Check => Is_Open (Object) or else raise Status_Error);
 	begin
 		if Is_Open (Object.Writing_Converter) then
 			Finish (
