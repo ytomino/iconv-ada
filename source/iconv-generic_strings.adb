@@ -16,10 +16,7 @@ package body iconv.Generic_Strings is
 		return Decoder is
 	begin
 		return Result : Decoder do
-			Do_Open (
-				Converter (Result),
-				To => To_Encoding,
-				From => From_Encoding);
+			Do_Open (Converter (Result), To => To_Encoding, From => From_Encoding);
 		end return;
 	end From;
 	
@@ -34,9 +31,8 @@ package body iconv.Generic_Strings is
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
-		Out_Item_2 : Ada.Streams.Stream_Element_Array (
-			1 ..
-			Out_Item'Length * CS_In_SE);
+		Out_Item_2 :
+			Ada.Streams.Stream_Element_Array (1 .. Out_Item'Length * CS_In_SE);
 		for Out_Item_2'Address use Out_Item'Address;
 		Out_Last_2 : Ada.Streams.Stream_Element_Offset;
 	begin
@@ -62,9 +58,8 @@ package body iconv.Generic_Strings is
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
-		Out_Item_2 : Ada.Streams.Stream_Element_Array (
-			1 ..
-			Out_Item'Length * CS_In_SE);
+		Out_Item_2 :
+			Ada.Streams.Stream_Element_Array (1 .. Out_Item'Length * CS_In_SE);
 		for Out_Item_2'Address use Out_Item'Address;
 		Out_Last_2 : Ada.Streams.Stream_Element_Offset;
 	begin
@@ -88,9 +83,8 @@ package body iconv.Generic_Strings is
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
-		Out_Item_2 : Ada.Streams.Stream_Element_Array (
-			1 ..
-			Out_Item'Length * CS_In_SE);
+		Out_Item_2 :
+			Ada.Streams.Stream_Element_Array (1 .. Out_Item'Length * CS_In_SE);
 		for Out_Item_2'Address use Out_Item'Address;
 		Out_Last_2 : Ada.Streams.Stream_Element_Offset;
 	begin
@@ -115,9 +109,8 @@ package body iconv.Generic_Strings is
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
-		Out_Item_2 : Ada.Streams.Stream_Element_Array (
-			1 ..
-			Out_Item'Length * CS_In_SE);
+		Out_Item_2 :
+			Ada.Streams.Stream_Element_Array (1 .. Out_Item'Length * CS_In_SE);
 		for Out_Item_2'Address use Out_Item'Address;
 		Out_Last_2 : Ada.Streams.Stream_Element_Offset;
 	begin
@@ -144,9 +137,8 @@ package body iconv.Generic_Strings is
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
-		Out_Item_2 : Ada.Streams.Stream_Element_Array (
-			1 ..
-			Out_Item'Length * CS_In_SE);
+		Out_Item_2 :
+			Ada.Streams.Stream_Element_Array (1 .. Out_Item'Length * CS_In_SE);
 		for Out_Item_2'Address use Out_Item'Address;
 		Out_Last_2 : Ada.Streams.Stream_Element_Offset;
 	begin
@@ -162,15 +154,11 @@ package body iconv.Generic_Strings is
 		Out_Last := Out_Item'First + Natural (Out_Last_2 / CS_In_SE) - 1;
 	end Decode;
 	
-	function Decode (
-		Object : Decoder;
-		S : Ada.Streams.Stream_Element_Array)
+	function Decode (Object : Decoder; S : Ada.Streams.Stream_Element_Array)
 		return String_Type
 	is
 		In_Last : Ada.Streams.Stream_Element_Offset := S'First - 1;
-		Result : String_Type (
-			1 ..
-			Max_Length_Of_Single_Character * S'Length);
+		Result : String_Type (1 .. Max_Length_Of_Single_Character * S'Length);
 		Out_Last : Natural := 0;
 		Status : Substituting_Status_Type;
 	begin
@@ -203,10 +191,7 @@ package body iconv.Generic_Strings is
 		return Encoder is
 	begin
 		return Result : Encoder do
-			Do_Open (
-				Converter (Result),
-				To => To_Encoding,
-				From => From_Encoding);
+			Do_Open (Converter (Result), To => To_Encoding, From => From_Encoding);
 		end return;
 	end To;
 	
@@ -221,9 +206,7 @@ package body iconv.Generic_Strings is
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
-		In_Item_2 : Ada.Streams.Stream_Element_Array (
-			1 ..
-			In_Item'Length * CS_In_SE);
+		In_Item_2 : Ada.Streams.Stream_Element_Array (1 .. In_Item'Length * CS_In_SE);
 		for In_Item_2'Address use In_Item'Address;
 		In_Last_2 : Ada.Streams.Stream_Element_Offset;
 	begin
@@ -249,9 +232,7 @@ package body iconv.Generic_Strings is
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
-		In_Item_2 : Ada.Streams.Stream_Element_Array (
-			1 ..
-			In_Item'Length * CS_In_SE);
+		In_Item_2 : Ada.Streams.Stream_Element_Array (1 .. In_Item'Length * CS_In_SE);
 		for In_Item_2'Address use In_Item'Address;
 		In_Last_2 : Ada.Streams.Stream_Element_Offset;
 	begin
@@ -277,9 +258,7 @@ package body iconv.Generic_Strings is
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
-		In_Item_2 : Ada.Streams.Stream_Element_Array (
-			1 ..
-			In_Item'Length * CS_In_SE);
+		In_Item_2 : Ada.Streams.Stream_Element_Array (1 .. In_Item'Length * CS_In_SE);
 		for In_Item_2'Address use In_Item'Address;
 		In_Last_2 : Ada.Streams.Stream_Element_Offset;
 	begin
@@ -306,9 +285,7 @@ package body iconv.Generic_Strings is
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
-		In_Item_2 : Ada.Streams.Stream_Element_Array (
-			1 ..
-			In_Item'Length * CS_In_SE);
+		In_Item_2 : Ada.Streams.Stream_Element_Array (1 .. In_Item'Length * CS_In_SE);
 		for In_Item_2'Address use In_Item'Address;
 		In_Last_2 : Ada.Streams.Stream_Element_Offset;
 	begin
@@ -324,17 +301,15 @@ package body iconv.Generic_Strings is
 		In_Last := In_Item'First + Natural (In_Last_2 / CS_In_SE) - 1;
 	end Encode;
 	
-	function Encode (
-		Object : Encoder;
-		S : String_Type)
+	function Encode (Object : Encoder; S : String_Type)
 		return Ada.Streams.Stream_Element_Array
 	is
 		CS_In_SE : constant Ada.Streams.Stream_Element_Count :=
 			Character_Type'Size / Ada.Streams.Stream_Element'Size;
 		In_Last : Natural := S'First - 1;
-		Result : Ada.Streams.Stream_Element_Array (
-			0 ..
-			CS_In_SE * Max_Length_Of_Single_Character * S'Length - 1);
+		Result :
+			Ada.Streams.Stream_Element_Array (
+				0 .. CS_In_SE * Max_Length_Of_Single_Character * S'Length - 1);
 		Out_Last : Ada.Streams.Stream_Element_Offset := -1;
 		Status : Substituting_Status_Type;
 	begin

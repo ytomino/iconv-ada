@@ -13,9 +13,11 @@ package iconv.Streams is
 	
 	-- management
 	function Open (
-		Decoder : in out Converter; -- neither access nor aliased for derived types
+		Decoder : in out Converter;
+			-- neither access nor aliased for derived types
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class)
 		return In_Type;
+	
 	function Is_Open (Object : In_Type) return Boolean;
 	
 	pragma Inline (Is_Open);
@@ -39,6 +41,7 @@ package iconv.Streams is
 		Encoder : in out Converter; -- same as above
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class)
 		return Out_Type;
+	
 	function Is_Open (Object : Out_Type) return Boolean;
 	
 	pragma Inline (Is_Open);
@@ -67,6 +70,7 @@ package iconv.Streams is
 		External : not null access constant String;
 		Stream : not null access Ada.Streams.Root_Stream_Type'Class)
 		return Inout_Type;
+	
 	function Is_Open (Object : Inout_Type) return Boolean;
 	
 	pragma Inline (Is_Open);
@@ -126,11 +130,12 @@ private
 	
 	-- only reading
 	
-	type In_Type is limited new Ada.Streams.Root_Stream_Type with record
-		Stream : access Ada.Streams.Root_Stream_Type'Class;
-		Reading_Converter : access Converter;
-		Reading_Context : Reading_Context_Type;
-	end record;
+	type In_Type is limited new Ada.Streams.Root_Stream_Type
+		with record
+			Stream : access Ada.Streams.Root_Stream_Type'Class;
+			Reading_Converter : access Converter;
+			Reading_Context : Reading_Context_Type;
+		end record;
 	
 	overriding procedure Read (
 		Object : in out In_Type;
@@ -142,11 +147,12 @@ private
 	
 	-- only writing
 	
-	type Out_Type is limited new Ada.Streams.Root_Stream_Type with record
-		Stream : access Ada.Streams.Root_Stream_Type'Class;
-		Writing_Converter : access Converter;
-		Writing_Context : Writing_Context_Type;
-	end record;
+	type Out_Type is limited new Ada.Streams.Root_Stream_Type
+		with record
+			Stream : access Ada.Streams.Root_Stream_Type'Class;
+			Writing_Converter : access Converter;
+			Writing_Context : Writing_Context_Type;
+		end record;
 	
 	overriding procedure Read (
 		Object : in out Out_Type;
@@ -158,22 +164,21 @@ private
 	
 	-- bidirectional
 	
-	type Inout_Type is limited new Ada.Streams.Root_Stream_Type with record
-		Internal : access constant String;
-		External : access constant String;
-		Stream : access Ada.Streams.Root_Stream_Type'Class;
-		-- substitute (encoded as internal)
-		Substitute_Length : Ada.Streams.Stream_Element_Offset;
-		Substitute : Ada.Streams.Stream_Element_Array (
-			1 ..
-			Max_Substitute_Length);
-		-- reading
-		Reading_Converter : Converter;
-		Reading_Context : Reading_Context_Type;
-		-- writing
-		Writing_Converter : Converter;
-		Writing_Context : Writing_Context_Type;
-	end record;
+	type Inout_Type is limited new Ada.Streams.Root_Stream_Type
+		with record
+			Internal : access constant String;
+			External : access constant String;
+			Stream : access Ada.Streams.Root_Stream_Type'Class;
+			-- substitute (encoded as internal)
+			Substitute_Length : Ada.Streams.Stream_Element_Offset;
+			Substitute : Ada.Streams.Stream_Element_Array (1 .. Max_Substitute_Length);
+			-- reading
+			Reading_Converter : Converter;
+			Reading_Context : Reading_Context_Type;
+			-- writing
+			Writing_Converter : Converter;
+			Writing_Context : Writing_Context_Type;
+		end record;
 	
 	overriding procedure Read (
 		Object : in out Inout_Type;

@@ -8,13 +8,9 @@ procedure stream_w is
 	Std_Output : constant Ada.Text_IO.Text_Streams.Stream_Access :=
 		Ada.Text_IO.Text_Streams.Stream (Ada.Text_IO.Standard_Output.all);
 	iconv_Converter : aliased iconv.Converter :=
-		iconv.Open (
-			To => "UTF-8",
-			From => "ISO-2022-JP-3");
+		iconv.Open (To => "UTF-8", From => "ISO-2022-JP-3");
 	iconv_Output : aliased iconv.Streams.Out_Type :=
-		iconv.Streams.Open (
-			iconv_Converter,
-			Stream => Std_Output);
+		iconv.Streams.Open (iconv_Converter, Stream => Std_Output);
 	S : Ada.Streams.Stream_Element_Array (1 .. 1);
 	Last : Ada.Streams.Stream_Element_Count;
 begin

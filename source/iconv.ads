@@ -26,21 +26,17 @@ package iconv is
 	
 	type Continuing_Status_Type is
 		new Subsequence_Status_Type range
-			Success ..
-			Subsequence_Status_Type'Last;
+			Success .. Subsequence_Status_Type'Last;
 	type Finishing_Status_Type is
 		new Subsequence_Status_Type range
-			Finished ..
-			Overflow;
+			Finished .. Overflow;
 	type Status_Type is
 		new Subsequence_Status_Type range
-			Finished ..
-			Illegal_Sequence;
+			Finished .. Illegal_Sequence;
 	
 	type Substituting_Status_Type is
 		new Status_Type range
-			Finished ..
-			Overflow;
+			Finished .. Overflow;
 	
 	subtype True_Only is Boolean range True .. True;
 	
@@ -53,14 +49,9 @@ package iconv is
 --			Dynamic_Predicate => Is_Open (Open_Converter),
 --			Predicate_Failure => raise Status_Error;
 	
-	procedure Open (
-		Object : in out Converter;
-		To : in String;
-		From : in String);
-	function Open (
-		To : String;
-		From : String)
-		return Converter;
+	procedure Open (Object : in out Converter; To : in String; From : in String);
+	function Open (To : String; From : String) return Converter;
+	
 	function Is_Open (Object : Converter) return Boolean;
 	
 	function Min_Size_In_From_Stream_Elements (
@@ -144,9 +135,7 @@ private
 		Min_Size_In_From_Stream_Elements : Ada.Streams.Stream_Element_Offset;
 		-- about "To"
 		Substitute_Length : Ada.Streams.Stream_Element_Offset;
-		Substitute : Ada.Streams.Stream_Element_Array (
-			1 ..
-			Max_Substitute_Length);
+		Substitute : Ada.Streams.Stream_Element_Array (1 .. Max_Substitute_Length);
 	end record;
 	pragma Suppress_Initialization (Non_Controlled_Converter);
 	
@@ -154,8 +143,7 @@ private
 		
 		type Converter is limited private;
 		
-		function Variable_View (Object : Converter)
-			return not null access Converter;
+		function Variable_View (Object : Converter) return not null access Converter;
 		pragma Inline (Variable_View);
 		
 		function Reference (Object : in out iconv.Converter)
@@ -168,14 +156,12 @@ private
 		
 	private
 		
-		type Converter is
-			limited new Ada.Finalization.Limited_Controlled with
-		record
-			Variable_View : not null access Converter :=
-				Converter'Unchecked_Access;
-			Data : aliased Non_Controlled_Converter :=
-				(Handle => System.Null_Address, others => <>);
-		end record;
+		type Converter is limited new Ada.Finalization.Limited_Controlled
+			with record
+				Variable_View : not null access Converter := Converter'Unchecked_Access;
+				Data : aliased Non_Controlled_Converter :=
+					(Handle => System.Null_Address, others => <>);
+			end record;
 		
 		overriding procedure Finalize (Object : in out Converter);
 		
@@ -183,10 +169,7 @@ private
 	
 	type Converter is new Controlled.Converter;
 	
-	procedure Do_Open (
-		Object : out Converter;
-		To : in String;
-		From : in String);
+	procedure Do_Open (Object : out Converter; To : in String; From : in String);
 	
 	procedure Put_Substitute (
 		Object : in Converter;

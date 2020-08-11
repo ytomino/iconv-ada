@@ -14,8 +14,7 @@ begin
 		pragma Assert (iconv.Strings.Decode (D, U16BE_A) = L1_A);
 		pragma Assert (iconv.Strings.Decode (D, U16BE_JAPANEASE_A) = "");
 		pragma Assert (
-			iconv.Strings.Decode (D, U16BE_A & U16BE_JAPANEASE_A & U16BE_A) =
-			L1_A & L1_A);
+			iconv.Strings.Decode (D, U16BE_A & U16BE_JAPANEASE_A & U16BE_A) = L1_A & L1_A);
 		iconv.Strings.Set_Substitute (D, (0 => Character'Pos ('?')));
 		pragma Assert (
 			iconv.Strings.Decode (D, U16BE_A & U16BE_JAPANEASE_A & U16BE_A) =

@@ -59,9 +59,7 @@ package iconv.Generic_Strings is
 		Finish : in True_Only;
 		Status : out Substituting_Status_Type);
 	
-	function Decode (
-		Object : Decoder;
-		S : Ada.Streams.Stream_Element_Array)
+	function Decode (Object : Decoder; S : Ada.Streams.Stream_Element_Array)
 		return String_Type;
 	
 	-- encoder
@@ -119,9 +117,7 @@ package iconv.Generic_Strings is
 		Finish : in True_Only;
 		Status : out Substituting_Status_Type);
 	
-	function Encode (
-		Object : Encoder;
-		S : String_Type)
+	function Encode (Object : Encoder; S : String_Type)
 		return Ada.Streams.Stream_Element_Array;
 	
 end iconv.Generic_Strings;

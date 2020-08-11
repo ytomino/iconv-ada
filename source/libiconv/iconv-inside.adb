@@ -21,13 +21,11 @@ package body iconv.Inside is
 		if namescount > 0 then
 			declare
 				type Process_Type is access procedure (Name : in String);
-				function To_Process is
-					new Ada.Unchecked_Conversion (C.void_ptr, Process_Type);
+				function To_Process is new Ada.Unchecked_Conversion (C.void_ptr, Process_Type);
 				type char_const_ptr_arrayN is
 					array (0 .. C.size_t (namescount) - 1) of C.char_const_ptr
 					with Convention => C;
-				type char_const_ptr_arrayN_const_ptr is
-					access constant char_const_ptr_arrayN
+				type char_const_ptr_arrayN_const_ptr is access constant char_const_ptr_arrayN
 					with Convention => C;
 				function To_char_const_ptr_arrayN_const_ptr is
 					new Ada.Unchecked_Conversion (
@@ -38,8 +36,7 @@ package body iconv.Inside is
 			begin
 				for I in 0 .. C.size_t (namescount) - 1 loop
 					declare
-						Length : constant Natural :=
-							Natural (C.string.strlen (Names_Array (I)));
+						Length : constant Natural := Natural (C.string.strlen (Names_Array (I)));
 						Name : String (1 .. Length);
 						for Name'Address use Names_Array (I).all'Address;
 					begin

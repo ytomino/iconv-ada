@@ -21,30 +21,17 @@ package body iconv is
 	procedure Iterate (Process : not null access procedure (Name : in String))
 		renames Inside.Iterate;
 	
-	procedure Open (
-		Object : in out Converter;
-		To : in String;
-		From : in String)
-	is
+	procedure Open (Object : in out Converter; To : in String; From : in String) is
 		pragma Check (Dynamic_Predicate,
 			Check => not Is_Open (Object) or else raise Status_Error);
 	begin
-		Do_Open (
-			Object,
-			To => To,
-			From => From);
+		Do_Open (Object, To => To, From => From);
 	end Open;
 	
-	function Open (
-		To : String;
-		From : String)
-		return Converter is
+	function Open (To : String; From : String) return Converter is
 	begin
 		return Result : Converter do
-			Do_Open (
-				Result,
-				To => To,
-				From => From);
+			Do_Open (Result, To => To, From => From);
 		end return;
 	end Open;
 	
@@ -140,12 +127,10 @@ package body iconv is
 		NC_Object : Non_Controlled_Converter
 			renames Controlled.Constant_Reference (Object).all;
 		In_Pointer : aliased C.char_const_ptr :=
-			C.char_const_ptr (
-				char_ptr_Conv.To_Pointer (In_Item (In_Item'First)'Address));
+			C.char_const_ptr (char_ptr_Conv.To_Pointer (In_Item (In_Item'First)'Address));
 		In_Size : aliased C.size_t := In_Item'Length;
 		Out_Pointer : aliased C.char_ptr :=
-			C.char_ptr (
-				char_ptr_Conv.To_Pointer (Out_Item (Out_Item'First)'Address));
+			C.char_ptr (char_ptr_Conv.To_Pointer (Out_Item (Out_Item'First)'Address));
 		Out_Size : aliased C.size_t := Out_Item'Length;
 		errno : C.signed_int;
 	begin
@@ -162,8 +147,7 @@ package body iconv is
 					Status := Overflow;
 				when C.errno.EINVAL
 					-- dirty hack for OSX
-					| -1601902748 | -1603246236 | -1609021596 | -1610246300
-				=>
+					| -1601902748 | -1603246236 | -1609021596 | -1610246300 =>
 					Status := Truncated;
 				when C.errno.EILSEQ =>
 					Status := Illegal_Sequence;
@@ -174,12 +158,14 @@ package body iconv is
 		else
 			Status := Success;
 		end if;
-		In_Last := In_Item'First
-			+ (In_Item'Length - Ada.Streams.Stream_Element_Offset (In_Size))
-			- 1;
-		Out_Last := Out_Item'First
-			+ (Out_Item'Length - Ada.Streams.Stream_Element_Offset (Out_Size))
-			- 1;
+		In_Last :=
+			In_Item'First
+				+ (In_Item'Length - Ada.Streams.Stream_Element_Offset (In_Size))
+				- 1;
+		Out_Last :=
+			Out_Item'First
+				+ (Out_Item'Length - Ada.Streams.Stream_Element_Offset (Out_Size))
+				- 1;
 	end Convert;
 	
 	procedure Convert (
@@ -217,9 +203,10 @@ package body iconv is
 		else
 			Status := Finished;
 		end if;
-		Out_Last := Out_Item'First
-			+ (Out_Item'Length - Ada.Streams.Stream_Element_Offset (Out_Size))
-			- 1;
+		Out_Last :=
+			Out_Item'First
+				+ (Out_Item'Length - Ada.Streams.Stream_Element_Offset (Out_Size))
+				- 1;
 	end Convert;
 	
 	procedure Convert (
@@ -245,9 +232,10 @@ package body iconv is
 					Out_Last,
 					Finish => Finish,
 					Status => Subsequence_Status);
-				pragma Assert (Subsequence_Status in
-					Subsequence_Status_Type (Status_Type'First) ..
-					Subsequence_Status_Type (Status_Type'Last));
+				pragma Assert (
+					Subsequence_Status in
+						Subsequence_Status_Type (Status_Type'First) ..
+						Subsequence_Status_Type (Status_Type'Last));
 				case Status_Type (Subsequence_Status) is
 					when Finished =>
 						Status := Finished;
@@ -311,9 +299,10 @@ package body iconv is
 					Out_Last,
 					Finish => Finish,
 					Status => Subsequence_Status);
-				pragma Assert (Subsequence_Status in
-					Subsequence_Status_Type (Status_Type'First) ..
-					Subsequence_Status_Type (Status_Type'Last));
+				pragma Assert (
+					Subsequence_Status in
+						Subsequence_Status_Type (Status_Type'First) ..
+						Subsequence_Status_Type (Status_Type'Last));
 				case Status_Type (Subsequence_Status) is
 					when Finished =>
 						Status := Finished;
@@ -355,8 +344,7 @@ package body iconv is
 	
 	package body Controlled is
 		
-		function Variable_View (Object : Converter)
-			return not null access Converter is
+		function Variable_View (Object : Converter) return not null access Converter is
 		begin
 			return Object.Variable_View;
 		end Variable_View;
@@ -376,8 +364,7 @@ package body iconv is
 		procedure Finalize (Object : in out Converter) is
 		begin
 			if Object.Data.Handle /= System.Null_Address -- for glibc
-				and then C.iconv.iconv_close (
-					C.iconv.iconv_t (Object.Data.Handle)) /= 0
+				and then C.iconv.iconv_close (C.iconv.iconv_t (Object.Data.Handle)) /= 0
 			then
 				null;
 			end if;
@@ -385,42 +372,39 @@ package body iconv is
 		
 	end Controlled;
 	
-	procedure Do_Open (
-		Object : out Converter;
-		To : in String;
-		From : in String)
-	is
+	procedure Do_Open (Object : out Converter; To : in String; From : in String) is
 		NC_Object : Non_Controlled_Converter
 			renames Controlled.Reference (Object).all;
 		C_To : aliased C.char_array (0 .. To'Length);
 		C_From : aliased C.char_array (0 .. From'Length);
-		Invalid : constant System.Address := System.Storage_Elements.To_Address (
-			System.Storage_Elements.Integer_Address'Mod (-1));
+		Invalid : constant System.Address :=
+			System.Storage_Elements.To_Address (
+				System.Storage_Elements.Integer_Address'Mod (-1));
 		Handle : System.Address;
 	begin
 		declare
 			Dummy : C.void_ptr;
 		begin
-			Dummy := C.string.memcpy (
-				C.void_ptr (C_To'Address),
-				C.void_const_ptr (To'Address),
-				C_To'Last);
+			Dummy :=
+				C.string.memcpy (
+					C.void_ptr (C_To'Address),
+					C.void_const_ptr (To'Address),
+					C_To'Last);
 		end;
 		C_To (C_To'Last) := C.char'Val (0);
 		declare
 			Dummy : C.void_ptr;
 		begin
-			Dummy := C.string.memcpy (
-				C.void_ptr (C_From'Address),
-				C.void_const_ptr (From'Address),
-				C_From'Last);
+			Dummy :=
+				C.string.memcpy (
+					C.void_ptr (C_From'Address),
+					C.void_const_ptr (From'Address),
+					C_From'Last);
 		end;
 		C_From (C_From'Last) := C.char'Val (0);
 		-- open
-		Handle := System.Address (
-			C.iconv.iconv_open (
-				C_To (0)'Access,
-				C_From (0)'Access));
+		Handle :=
+			System.Address (C.iconv.iconv_open (C_To (0)'Access, C_From (0)'Access));
 		if Handle = Invalid then
 			raise Name_Error;
 		end if;
@@ -428,17 +412,15 @@ package body iconv is
 		-- about "From"
 		NC_Object.Min_Size_In_From_Stream_Elements := 1; -- fallback
 		declare
-			In_Buffer : aliased constant C.char_array (
-				0 ..
-				Max_Length_Of_Single_Character - 1) := (others => C.char'Val (0));
+			In_Buffer : aliased constant
+					C.char_array (0 .. Max_Length_Of_Single_Character - 1) :=
+				(others => C.char'Val (0));
 		begin
 			for I in C.size_t'(1) .. Max_Length_Of_Single_Character loop
 				declare
 					In_Pointer : aliased C.char_const_ptr := In_Buffer (0)'Unchecked_Access;
 					In_Size : aliased C.size_t := I;
-					Out_Buffer : aliased C.char_array (
-						0 ..
-						Max_Length_Of_Single_Character - 1);
+					Out_Buffer : aliased C.char_array (0 .. Max_Length_Of_Single_Character - 1);
 					Out_Pointer : aliased C.char_ptr := Out_Buffer (0)'Unchecked_Access;
 					Out_Size : aliased C.size_t := Max_Length_Of_Single_Character;
 				begin
