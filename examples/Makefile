@@ -24,7 +24,7 @@ LFLAGS=-ggdb
 HFLAGS=
 
 ifneq ($(findstring linux-gnu,$(TARGET)),)
-ICONVTYPE=lfs
+ICONVTYPE=glibc
 else
 ICONVTYPE=libiconv
 endif

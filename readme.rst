@@ -27,9 +27,9 @@ Usage
     $ gnatmake -Iiconv-ada/source -Iiconv-ada/source/libiconv -Iimport-dir your_main.adb
    
    If iconv is provided by glibc in your system (Linux), some functions of
-   libiconv are missing. So use source/lfs instead of source/libiconv. ::
+   libiconv are missing. So use source/glibc instead of source/libiconv. ::
    
-    $ gnatmake -Iiconv-ada/source -Iiconv-ada/source/lfs -Iimport-dir your_main.adb
+    $ gnatmake -Iiconv-ada/source -Iiconv-ada/source/glibc -Iimport-dir your_main.adb
    
    Or please write .gpr file for your environment.
 
