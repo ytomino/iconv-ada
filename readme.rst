@@ -21,11 +21,11 @@ headmaster
 Usage
 -----
 
-1. Translate C headers with headmaster. ::
+1. Translate the C headers with headmaster. ::
    
     $ headmaster --to ada -p -D import-dir iconv-ada/source/import.h
 
-2. Add source directories of iconv-ada and translated headers
+2. Add the source directories of iconv-ada and the translated headers
    to search path for gnatmake. ::
    
     $ gnatmake -Iiconv-ada/source -Iiconv-ada/source/libiconv -Iimport-dir your_main.adb
