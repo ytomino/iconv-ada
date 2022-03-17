@@ -6,11 +6,15 @@ What's this?
 
 Ada binding to the International Codeset Conversion Library.
 
-Depending tools and libraries
------------------------------
+Prerequisites
+-------------
 
-libiconv (GNU version)
+GCC >= 4.7
+ https://gcc.gnu.org/zlib
+libiconv (GNU version) >= 1.11
  http://www.gnu.org/software/libiconv/
+Or glibc >= 2.24
+ https://www.gnu.org/software/libc/
 headmaster
  http://github.com/ytomino/headmaster
 
