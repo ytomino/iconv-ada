@@ -27,5 +27,6 @@ begin
 		pragma Assert (iconv.Strings.Encode (E, L1_A) = U16BE_A);
 		null;
 	end;
-	pragma Debug (Ada.Text_IO.Put_Line ("OK"));
+	-- finish
+	Ada.Text_IO.Put_Line (Ada.Text_IO.Standard_Error.all, "ok");
 end Test_Strings;
