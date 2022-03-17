@@ -21,21 +21,42 @@ headmaster
 Usage
 -----
 
-1. Translate the C headers with headmaster. ::
-   
-    $ headmaster --to ada -p -D import-dir iconv-ada/source/import.h
+1. Prepare the translated headers.
+
+   A. Translate the C headers with headmaster. ::
+
+       $ headmaster --to ada -p -D import-dir iconv-ada/source/import.h
+      
+      However, it may not work well in your environment.
+      The plan B is recommended.
+
+   B. Download them from `pre-translated headers page`_.
 
 2. Add the source directories of iconv-ada and the translated headers
    to search path for gnatmake. ::
-   
+
     $ gnatmake -Iiconv-ada/source -Iiconv-ada/source/libiconv -Iimport-dir your_main.adb
    
    If iconv is provided by glibc in your system (Linux), some functions of
    libiconv are missing. So use source/glibc instead of source/libiconv. ::
-   
+
     $ gnatmake -Iiconv-ada/source -Iiconv-ada/source/glibc -Iimport-dir your_main.adb
    
    Or please write .gpr file for your environment.
+
+Build examples
+--------------
+
+1. Link the translated headers to `examples/import`. ::
+
+    $ mkdir iconv-ada/examples/import
+    $ ln -s $PWD/import-dir iconv-ada/examples/import/$(gcc -dumpmachine)
+   
+   If this step is omitted, headmaster will be used.
+
+2. Build them. ::
+
+    $ make -C iconv-ada/examples
 
 License
 -------
@@ -83,3 +104,5 @@ Please apply LGPL when static linking libiconv.a of GNU version.
  
  You should have received a copy of the GNU Library General Public License
  along with iconv-ada.  If not, see <http://www.gnu.org/licenses/>.
+
+.. _`pre-translated headers page`: https://github.com/ytomino/iconv-ada/wiki/Pre-translated-headers
