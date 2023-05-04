@@ -232,11 +232,7 @@ package body iconv is
 					Out_Last,
 					Finish => Finish,
 					Status => Subsequence_Status);
-				pragma Assert (
-					Subsequence_Status in
-						Subsequence_Status_Type (Status_Type'First) ..
-						Subsequence_Status_Type (Status_Type'Last));
-				case Status_Type (Subsequence_Status) is
+				case Subsequence_Status is
 					when Finished =>
 						Status := Finished;
 						return;
@@ -246,7 +242,7 @@ package body iconv is
 					when Overflow =>
 						Status := Overflow;
 						return;
-					when Illegal_Sequence =>
+					when Illegal_Sequence | Truncated =>
 						declare
 							Is_Overflow : Boolean;
 						begin
@@ -299,11 +295,7 @@ package body iconv is
 					Out_Last,
 					Finish => Finish,
 					Status => Subsequence_Status);
-				pragma Assert (
-					Subsequence_Status in
-						Subsequence_Status_Type (Status_Type'First) ..
-						Subsequence_Status_Type (Status_Type'Last));
-				case Status_Type (Subsequence_Status) is
+				case Subsequence_Status is
 					when Finished =>
 						Status := Finished;
 						return;
@@ -313,7 +305,7 @@ package body iconv is
 					when Overflow =>
 						Status := Overflow;
 						return;
-					when Illegal_Sequence =>
+					when Illegal_Sequence | Truncated =>
 						declare
 							Is_Overflow : Boolean;
 						begin
