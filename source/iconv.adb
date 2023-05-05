@@ -434,6 +434,26 @@ package body iconv is
 		NC_Object.Substitute_Length := 0;
 	end Do_Open;
 	
+	procedure Reset_State (Object : in Converter) is
+		NC_Object : Non_Controlled_Converter
+			renames Controlled.Constant_Reference (Object).all;
+	begin
+		if C.iconv.iconv (
+			C.iconv.iconv_t (NC_Object.Handle),
+			C.char_const_ptr_ptr'(null),
+			null,
+			null,
+			null) = C.size_t'Last
+		then
+			declare
+				errno : constant C.signed_int := C.errno.errno;
+			begin
+				raise Use_Error
+					with "iconv failed (errno =" & C.signed_int'Image (errno) & ")";
+			end;
+		end if;
+	end Reset_State;
+	
 	procedure Put_Substitute (
 		Object : in Converter;
 		Out_Item : out Ada.Streams.Stream_Element_Array;

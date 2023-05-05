@@ -171,6 +171,8 @@ private
 	
 	procedure Do_Open (Object : out Converter; To : in String; From : in String);
 	
+	procedure Reset_State (Object : in Converter);
+	
 	procedure Put_Substitute (
 		Object : in Converter;
 		Out_Item : out Ada.Streams.Stream_Element_Array;

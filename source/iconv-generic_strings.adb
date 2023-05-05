@@ -181,6 +181,10 @@ package body iconv.Generic_Strings is
 			end case;
 		end loop;
 		return Result (Result'First .. Out_Last);
+	exception
+		when others =>
+			Reset_State (Converter (Object));
+			raise;
 	end Decode;
 	
 	-- encoder
@@ -332,6 +336,10 @@ package body iconv.Generic_Strings is
 			end case;
 		end loop;
 		return Result (Result'First .. Out_Last);
+	exception
+		when others =>
+			Reset_State (Converter (Object));
+			raise;
 	end Encode;
 	
 end iconv.Generic_Strings;
