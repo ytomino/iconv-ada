@@ -124,8 +124,11 @@ private
 	
 	-- max length of one multi-byte character
 	
-	Max_Length_Of_Single_Character : constant := 6; -- UTF-8
+	Max_Length_Of_Single_Character : constant := 8;
 	Max_Substitute_Length : constant := Max_Length_Of_Single_Character;
+	
+	-- For example: ISO-8859-1 "\xA2" ("¢") is converted to
+	-- ISO-2022-JP "\x1B\x24\x42\x21\x71\x1B\x28\x42".
 	
 	-- converter
 	
