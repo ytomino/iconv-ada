@@ -1,5 +1,6 @@
 with Ada.Streams;
 with Ada.Text_IO;
+with System;
 with iconv.Generic_Strings;
 with iconv.Strings;
 procedure Test_Strings is
@@ -31,6 +32,28 @@ begin
 			null;
 		end;
 	end;
+	declare -- LATIN1 and JIS
+		L1_CENT_SIGN : constant String (1 .. 1) := (1 => Character'Val (16#A2#));
+		JIS_CENT_SIGN : constant Ada.Streams.Stream_Element_Array (1 .. 8) :=
+			(16#1B#, 16#24#, 16#42#, 16#21#, 16#71#, 16#1B#, 16#28#, 16#42#);
+	begin
+		declare
+			E : iconv.Strings.Encoder := iconv.Strings.To ("ISO-2022-JP");
+			pragma Unmodified (E);
+		begin
+			pragma Assert (
+				iconv.Strings.Encode (E, L1_CENT_SIGN) = JIS_CENT_SIGN);
+			null;
+		end;
+		declare
+			D : iconv.Strings.Decoder := iconv.Strings.From ("ISO-2022-JP");
+			pragma Unmodified (D);
+		begin
+			pragma Assert (
+				iconv.Strings.Decode (D, JIS_CENT_SIGN) = L1_CENT_SIGN);
+			null;
+		end;
+	end;
 	declare -- UTF-8 and JIS
 		U8_JAPANEASE_A : constant String (1 .. 3) :=
 			(Character'Val (16#E3#), Character'Val (16#81#), Character'Val (16#82#));
@@ -49,6 +72,36 @@ begin
 				iconv_UTF8_Strings.Encode (E, U8_JAPANEASE_A (1 .. 2)) =
 					(Character'Pos ('?'), Character'Pos ('?')));
 				-- truncated input
+		end;
+	end;
+	declare -- UTF-16 and JIS
+		U16_CENT_SIGN : constant Wide_String (1 .. 1) :=
+			(1 => Wide_Character'Val (16#00A2#));
+		JIS_CENT_SIGN : constant Ada.Streams.Stream_Element_Array (1 .. 8) :=
+			(16#1B#, 16#24#, 16#42#, 16#21#, 16#71#, 16#1B#, 16#28#, 16#42#);
+		package iconv_UTF16_Strings is
+			new iconv.Generic_Strings (
+				Wide_Character,
+				Wide_String,
+				(case System.Default_Bit_Order is
+					when System.High_Order_First => "UTF-16BE",
+					when System.Low_Order_First => "UTF-16LE"));
+	begin
+		declare
+			E : iconv_UTF16_Strings.Encoder := iconv_UTF16_Strings.To ("ISO-2022-JP");
+			pragma Unmodified (E);
+		begin
+			pragma Assert (
+				iconv_UTF16_Strings.Encode (E, U16_CENT_SIGN) = JIS_CENT_SIGN);
+			null;
+		end;
+		declare
+			D : iconv_UTF16_Strings.Decoder := iconv_UTF16_Strings.From ("ISO-2022-JP");
+			pragma Unmodified (D);
+		begin
+			pragma Assert (
+				iconv_UTF16_Strings.Decode (D, JIS_CENT_SIGN) = U16_CENT_SIGN);
+			null;
 		end;
 	end;
 	-- finish
