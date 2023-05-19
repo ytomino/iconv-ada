@@ -13,6 +13,33 @@ package body iconv is
 	package char_ptr_Conv is
 		new System.Address_To_Access_Conversions (C.char);
 	
+	procedure Restore_State (
+		NC_Object : in Non_Controlled_Converter;
+		Out_Item : out Ada.Streams.Stream_Element_Array;
+		Out_Last : out Ada.Streams.Stream_Element_Offset;
+		errno : out C.signed_int)
+	is
+		Out_Pointer : aliased C.char_ptr :=
+			C.char_ptr (char_ptr_Conv.To_Pointer (Out_Item'Address));
+		Out_Size : aliased C.size_t := Out_Item'Length;
+	begin
+		if C.iconv.iconv (
+			C.iconv.iconv_t (NC_Object.Handle),
+			C.char_const_ptr_ptr'(null),
+			null,
+			Out_Pointer'Access,
+			Out_Size'Access) = C.size_t'Last
+		then
+			errno := C.errno.errno;
+		else
+			errno := 0;
+		end if;
+		Out_Last :=
+			Out_Item'First
+				+ (Out_Item'Length - Ada.Streams.Stream_Element_Offset (Out_Size))
+				- 1;
+	end Restore_State;
+	
 	-- implementation
 	
 	function Version return String
@@ -180,33 +207,18 @@ package body iconv is
 			Check => Is_Open (Object) or else raise Status_Error);
 		NC_Object : Non_Controlled_Converter
 			renames Controlled.Constant_Reference (Object).all;
-		Out_Pointer : aliased C.char_ptr :=
-			C.char_ptr (char_ptr_Conv.To_Pointer (Out_Item'Address));
-		Out_Size : aliased C.size_t := Out_Item'Length;
 		errno : C.signed_int;
 	begin
-		if C.iconv.iconv (
-			C.iconv.iconv_t (NC_Object.Handle),
-			C.char_const_ptr_ptr'(null),
-			null,
-			Out_Pointer'Access,
-			Out_Size'Access) = C.size_t'Last
-		then
-			errno := C.errno.errno;
-			case errno is
-				when C.errno.E2BIG =>
-					Status := Overflow;
-				when others => -- unknown
-					raise Use_Error
-						with "iconv failed (errno =" & C.signed_int'Image (errno) & ")";
-			end case;
-		else
-			Status := Finished;
-		end if;
-		Out_Last :=
-			Out_Item'First
-				+ (Out_Item'Length - Ada.Streams.Stream_Element_Offset (Out_Size))
-				- 1;
+		Restore_State (NC_Object, Out_Item, Out_Last, errno => errno);
+		case errno is
+			when 0 =>
+				Status := Finished;
+			when C.errno.E2BIG =>
+				Status := Overflow;
+			when others => -- unknown
+				raise Use_Error
+					with "iconv failed (errno =" & C.signed_int'Image (errno) & ")";
+		end case;
 	end Convert;
 	
 	procedure Convert (
@@ -463,12 +475,34 @@ package body iconv is
 		NC_Object : Non_Controlled_Converter
 			renames Controlled.Constant_Reference (Object).all;
 	begin
-		Out_Last := Out_Item'First - 1;
-		Is_Overflow := Out_Item'Length < NC_Object.Substitute_Length;
-		if not Is_Overflow then
-			Out_Last := Out_Last + NC_Object.Substitute_Length;
-			Out_Item (Out_Item'First .. Out_Last) :=
-				NC_Object.Substitute (1 .. NC_Object.Substitute_Length);
+		if NC_Object.Substitute_Length = 0 then
+			Out_Last := Out_Item'First - 1;
+			Is_Overflow := False;
+		else
+			declare
+				errno : C.signed_int;
+			begin
+				Restore_State (NC_Object, Out_Item, Out_Last, errno => errno);
+				case errno is
+					when 0 =>
+						declare
+							New_Out_Last : constant Ada.Streams.Stream_Element_Offset :=
+								Out_Last + NC_Object.Substitute_Length;
+						begin
+							Is_Overflow := New_Out_Last > Out_Item'Last;
+							if not Is_Overflow then
+								Out_Item (Out_Last + 1 .. New_Out_Last) :=
+									NC_Object.Substitute (1 .. NC_Object.Substitute_Length);
+								Out_Last := New_Out_Last;
+							end if;
+						end;
+					when C.errno.E2BIG =>
+						Is_Overflow := True;
+					when others => -- unknown
+						raise Use_Error
+							with "iconv failed (errno =" & C.signed_int'Image (errno) & ")";
+				end case;
+			end;
 		end if;
 	end Put_Substitute;
 	

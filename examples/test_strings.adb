@@ -34,16 +34,21 @@ begin
 	end;
 	declare -- LATIN1 and JIS
 		L1_CENT_SIGN : constant String (1 .. 1) := (1 => Character'Val (16#A2#));
+		L1_CURRENCY_SIGN : constant String (1 .. 1) := (1 => Character'Val (16#A4#));
 		JIS_CENT_SIGN : constant Ada.Streams.Stream_Element_Array (1 .. 8) :=
 			(16#1B#, 16#24#, 16#42#, 16#21#, 16#71#, 16#1B#, 16#28#, 16#42#);
+		Substitution : constant Ada.Streams.Stream_Element_Array (0 .. 0) :=
+			(0 => Character'Pos ('?'));
 	begin
 		declare
 			E : iconv.Strings.Encoder := iconv.Strings.To ("ISO-2022-JP");
-			pragma Unmodified (E);
 		begin
 			pragma Assert (
 				iconv.Strings.Encode (E, L1_CENT_SIGN) = JIS_CENT_SIGN);
-			null;
+			iconv.Strings.Set_Substitute (E, Substitution);
+			pragma Assert (
+				iconv.Strings.Encode (E, L1_CENT_SIGN & L1_CURRENCY_SIGN) =
+					JIS_CENT_SIGN & Substitution);
 		end;
 		declare
 			D : iconv.Strings.Decoder := iconv.Strings.From ("ISO-2022-JP");
